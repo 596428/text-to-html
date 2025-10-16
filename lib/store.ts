@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { AppState, Box, ChatMessage, HTMLVersion } from '@/types';
+import { DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT } from '@/lib/constants';
 
 export const useStore = create<AppState>()(
   devtools(
@@ -21,8 +22,8 @@ export const useStore = create<AppState>()(
             id: `box-${Date.now()}`,
             x: 0,
             y: state.boxes.length * 250,
-            width: 6,  // 12컬럼 중 6컬럼 (50%)
-            height: 200,
+            width: DEFAULT_BOX_WIDTH,
+            height: DEFAULT_BOX_HEIGHT,
             content: ''
           };
           return { boxes: [...state.boxes, newBox] };
