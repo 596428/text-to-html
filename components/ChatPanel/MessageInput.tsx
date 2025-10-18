@@ -10,6 +10,11 @@ export default function MessageInput() {
   const isGenerating = useStore((state) => state.isGenerating);
   const setGenerating = useStore((state) => state.setGenerating);
 
+  const htmlVersions = useStore((state) => state.htmlVersions);
+  const currentVersion = useStore((state) => state.currentVersion);
+  const addVersion = useStore((state) => state.addVersion);
+  const setError = useStore((state) => state.setError);
+
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return;
 
@@ -23,18 +28,62 @@ export default function MessageInput() {
       timestamp: new Date(),
     });
 
-    // TODO: P2-A에서 API 연동 시 실제 AI 응답 처리
-    // 현재는 임시 응답만 표시
     setGenerating(true);
+    setError(null);
 
-    setTimeout(() => {
+    try {
+      // 현재 HTML 가져오기
+      const currentHTML = htmlVersions.find((v) => v.version === currentVersion)?.html || '';
+
+      if (!currentHTML) {
+        addMessage({
+          role: 'system',
+          content: '먼저 레이아웃 에디터에서 HTML을 생성해주세요.',
+          timestamp: new Date(),
+        });
+        setGenerating(false);
+        return;
+      }
+
+      // API 호출
+      const response = await fetch('/api/modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentHTML, userRequest: userMessage })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        addMessage({
+          role: 'system',
+          content: `오류: ${data.error}`,
+          timestamp: new Date(),
+        });
+        setError(data.error);
+      } else {
+        // AI 응답 추가
+        addMessage({
+          role: 'assistant',
+          content: '✅ HTML이 수정되었습니다. 프리뷰 패널에서 확인하세요!',
+          timestamp: new Date(),
+        });
+
+        // 새 버전 추가
+        addVersion(data.html, `챗봇 수정: ${userMessage}`);
+        setError(null);
+      }
+    } catch (error) {
+      console.error('Modify error:', error);
       addMessage({
-        role: 'assistant',
-        content: '이 메시지는 임시 응답입니다. P2-A Gemini API 통합 후 실제 AI 응답으로 대체됩니다.',
+        role: 'system',
+        content: '수정 중 오류가 발생했습니다. 다시 시도해주세요.',
         timestamp: new Date(),
       });
+      setError('수정에 실패했습니다.');
+    } finally {
       setGenerating(false);
-    }, 1000);
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
