@@ -1,11 +1,20 @@
+'use client';
+
+import Toolbar from './Toolbar';
+import IframePreview from './IframePreview';
+import VersionSelector from './VersionSelector';
+
 export default function PreviewPanel() {
   return (
-    <div className="p-4 h-full flex items-center justify-center text-gray-500">
-      <div className="text-center">
-        <div className="text-6xl mb-4">🖼️</div>
-        <p className="text-lg font-semibold">Preview Panel</p>
-        <p className="text-sm mt-2">To be implemented in P1-B</p>
-      </div>
+    <div className="h-full flex flex-col bg-gray-50">
+      {/* 상단 툴바 - HTML 생성/다운로드 */}
+      <Toolbar />
+
+      {/* 중앙 프리뷰 영역 - Iframe */}
+      <IframePreview />
+
+      {/* 하단 버전 셀렉터 - 히스토리 네비게이션 */}
+      <VersionSelector />
     </div>
   );
 }
