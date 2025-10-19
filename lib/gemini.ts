@@ -46,10 +46,22 @@ ${box.popupContent || '팝업 기본 내용'}` : ''}
 
 # 생성 규칙
 1. <!DOCTYPE html>부터 </html>까지 **완전한 파일**
-2. **TailwindCSS CDN** 사용 필수
-3. 반응형 디자인 (모바일 대응)
-4. 12컬럼 그리드 시스템 활용
-5. 현대적이고 깔끔한 디자인
+2. **TailwindCSS CDN 고정 버전**: 반드시 다음 CDN을 사용하세요
+   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+3. **컨테이너 너비 표준화**:
+   - 메인 컨테이너: <div class="container mx-auto max-w-7xl space-y-4">
+   - w-10/12, w-11/12 같은 비율 너비 사용 금지
+4. **패딩/간격 표준**:
+   - 버튼: px-4 py-2
+   - 입력 필드: p-2, border border-gray-300
+   - 카드/섹션: p-4
+   - 요소 간격: gap-4 또는 space-y-4
+5. **색상 팔레트 고정**:
+   - Body 배경: bg-gray-100
+   - 카드 배경: bg-white
+   - 라벨 배경: bg-blue-100
+   - 테두리: border-gray-300
+   - 텍스트: text-gray-700 (기본), text-gray-500 (보조)
 6. 더미 텍스트는 **한국어**로
 7. 각 영역을 명확히 구분 (border/background로 시각화)
 8. 실제 사용 가능한 수준의 퀄리티
