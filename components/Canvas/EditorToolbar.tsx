@@ -50,55 +50,55 @@ export default function EditorToolbar() {
   };
 
   return (
-    <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-      <div className="space-y-2">
+    <div className="px-4 py-3 border-b border-gray-300 bg-gray-50">
+      <div className="flex items-center gap-3">
         <button
           onClick={handleGenerate}
           disabled={boxes.length === 0 || isGenerating}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold
-                     py-3 px-4 rounded-lg shadow-md transition-all hover:shadow-lg
+          className="bg-gray-700 hover:bg-gray-800 text-white font-semibold
+                     py-2 px-4 rounded-md shadow-sm transition-all
                      disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
         >
           {isGenerating ? (
-            <span className="flex items-center justify-center gap-2">
+            <span className="flex items-center gap-2">
               <span className="animate-spin">⏳</span>
               HTML 생성 중...
             </span>
           ) : (
-            '🚀 HTML 생성'
+            'HTML 생성'
           )}
         </button>
 
         {hasGeneratedHTML && (
           <button
             onClick={() => setCanvasMode('preview')}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold
-                       py-2.5 px-4 rounded-lg shadow-md transition-all hover:shadow-lg"
+            className="bg-gray-600 hover:bg-gray-700 text-white font-medium
+                       py-2 px-4 rounded-md shadow-sm transition-all"
           >
-            👁️ 프리뷰 보기
+            프리뷰 보기
           </button>
         )}
 
         <button
           onClick={addBox}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold
-                     py-2.5 px-4 rounded-lg shadow-md transition-all hover:shadow-lg"
+          className="bg-gray-600 hover:bg-gray-700 text-white font-medium
+                     py-2 px-4 rounded-md shadow-sm transition-all"
         >
-          ➕ 박스 추가
+          박스 추가
         </button>
 
         {boxes.length > 0 && (
           <button
             onClick={clearBoxes}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold
-                       py-2 px-4 rounded-lg text-sm transition-all"
+            className="bg-gray-500 hover:bg-gray-600 text-white font-medium
+                       py-2 px-4 rounded-md shadow-sm transition-all"
           >
-            🗑️ 전체 삭제
+            전체 삭제
           </button>
         )}
 
-        <div className="text-xs text-gray-600 mt-2 p-2 bg-white rounded border border-blue-200">
-          💡 <strong>Tip:</strong> 박스를 그리고 설명을 작성한 후 "HTML 생성"을 클릭하세요
+        <div className="ml-auto text-xs text-gray-600">
+          <strong>Tip:</strong> 박스를 그리고 설명을 작성한 후 "HTML 생성"을 클릭하세요
         </div>
       </div>
     </div>

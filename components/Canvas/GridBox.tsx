@@ -48,8 +48,8 @@ export default function GridBox({ box }: GridBoxProps) {
       <div className="h-full flex flex-col p-3 bg-white">
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-2 pb-2 border-b">
-          <span className="text-xs font-semibold text-gray-600">
-            📐 {box.width}/12 cols
+          <span className="text-xs font-medium text-gray-500">
+            너비: {box.width}칸
           </span>
           <button
             onClick={(e) => {
