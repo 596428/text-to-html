@@ -39,7 +39,9 @@ ${boxes.map((box, i) => `
 - **위치**: ${box.x}열 (0-11), Y축 ${box.y}px
 - **크기**: ${box.width}/12 컬럼, 높이 ${box.height}px
 - **요구사항**: ${box.content || '(설명 없음)'}
-${box.hasPopup ? `- **팝업 기능**: 이 영역에 "${box.popupTriggerText || '상세보기'}" 버튼을 추가하고, 클릭 시 팝업이 표시되도록 구현하세요. 팝업 ID는 "popup-${i + 1}"로 설정하세요.` : ''}
+${box.hasPopup ? `- **팝업 기능**: 이 영역에 "${box.popupTriggerText || '상세보기'}" 버튼을 추가하고, 클릭 시 팝업이 표시되도록 구현하세요. 팝업 ID는 "popup-${i + 1}"로 설정하세요.
+- **팝업 내용**:
+${box.popupContent || '팝업 기본 내용'}` : ''}
 `).join('\n')}
 
 # 생성 규칙
