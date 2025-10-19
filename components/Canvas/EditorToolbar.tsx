@@ -25,6 +25,8 @@ export default function EditorToolbar() {
     setGenerating(true);
     setError(null);
 
+    const startTime = performance.now();
+
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -37,6 +39,10 @@ export default function EditorToolbar() {
       if (data.error) {
         setError(data.error);
       } else {
+        const endTime = performance.now();
+        const duration = ((endTime - startTime) / 1000).toFixed(2);
+        console.log(`✅ HTML 생성 완료 - 소요시간: ${duration}초`);
+
         const prompt = boxes.map((b) => `[${b.width}컬럼] ${b.content}`).join('\n');
         addVersion(data.html, prompt);
         setCanvasMode('preview'); // 자동으로 프리뷰 모드로 전환
