@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# logs (prototype development)
+/logs
+
+# logs (prototype development)
+/logs

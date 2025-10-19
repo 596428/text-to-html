@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Box } from '@/types';
+import { logHTMLGeneration, logHTMLModification } from '@/lib/logger';
 
 // ============ API 키 관리 (순환 사용) ============
 
@@ -98,6 +99,9 @@ ${box.hasPopup ? `- **팝업 기능**: 이 영역에 "${box.popupTriggerText || 
 - 설명/주석 최소화
 `.trim();
 
+  // 로그 저장 (프로토타입 개발용)
+  logHTMLGeneration(boxes, prompt);
+
   const result = await model.generateContent(prompt);
   let html = result.response.text();
 
@@ -178,6 +182,9 @@ ${currentHTML}
 # 출력 형식
 - 수정된 HTML 코드만 (마크다운 코드블록 없이)
 `.trim();
+
+  // 로그 저장 (프로토타입 개발용)
+  logHTMLModification(currentHTML, userRequest, prompt);
 
   const result = await model.generateContent(prompt);
   let html = result.response.text();
