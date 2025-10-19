@@ -76,8 +76,14 @@ ${box.popupContent || '팝업 기본 내용'}` : ''}
 11. **빈 공간 처리 금지**: 사용자가 요구하지 않은 설명 텍스트나 placeholder를 임의로 추가하지 마세요. 예를 들어 "여기에 내용이 표시됩니다", "정보를 입력하세요" 같은 문구를 넣지 말고, 사용자가 명시한 요소(버튼, 입력필드, 라벨 등)만 생성하세요. 빈 영역은 빈 공간으로 남겨두세요.
 
 # 팝업 구현 규칙
-11. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
-12. 각 팝업은 다음 구조로 생성하세요:
+11. <head> 내부에 다음 CSS를 **반드시** 추가하세요:
+    <style>
+      .popup-overlay.hidden {
+        display: none;
+      }
+    </style>
+12. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
+13. 각 팝업은 다음 구조로 생성하세요:
     <div id="popup-{N}" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
         <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
@@ -88,7 +94,7 @@ ${box.popupContent || '팝업 기본 내용'}` : ''}
         </div>
       </div>
     </div>
-13. </body> 태그 직전에 다음 JavaScript를 추가하세요:
+14. </body> 태그 직전에 다음 JavaScript를 추가하세요:
     <script>
       // 팝업 열기/닫기 로직
       document.querySelectorAll('[data-popup-trigger]').forEach(btn => {
