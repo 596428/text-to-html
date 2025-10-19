@@ -37,7 +37,7 @@ export async function generateHTML(boxes: Box[]): Promise<string> {
 ${boxes.map((box, i) => `
 ## 영역 ${i + 1}
 - **위치**: ${box.x}열 (0-11), Y축 ${box.y}px
-- **크기**: ${box.width}/12 컬럼, 높이 ${box.height}px
+- **크기**: ${box.width}/12 컬럼
 - **요구사항**: ${box.content || '(설명 없음)'}
 ${box.hasPopup ? `- **팝업 기능**: 이 영역에 "${box.popupTriggerText || '상세보기'}" 버튼을 추가하고, 클릭 시 팝업이 표시되도록 구현하세요. 팝업 ID는 "popup-${i + 1}"로 설정하세요.
 - **팝업 내용**:
@@ -62,28 +62,32 @@ ${box.popupContent || '팝업 기본 내용'}` : ''}
    - 라벨 배경: bg-blue-100
    - 테두리: border-gray-300
    - 텍스트: text-gray-700 (기본), text-gray-500 (보조)
-6. 더미 텍스트는 **한국어**로
-7. 각 영역을 명확히 구분 (border/background로 시각화)
-8. 실제 사용 가능한 수준의 퀄리티
-9. **중요**: 각 주요 섹션/컴포넌트에 data-editable="true" 속성과 고유한 data-section-id="section-N" 속성을 추가하세요 (나중에 드래그/리사이즈 편집을 위해 필요)
-10. **테이블/그리드 중요 (매우 엄격)**:
+6. **높이 자동 조절 (중요)**:
+   - 각 영역의 높이는 내용에 맞게 자동으로 조절되어야 합니다
+   - min-height 인라인 스타일 사용 금지
+   - 내용이 적으면 작게, 많으면 크게 자연스럽게 표시
+7. 더미 텍스트는 **한국어**로
+8. 각 영역을 명확히 구분 (border/background로 시각화)
+9. 실제 사용 가능한 수준의 퀄리티
+10. **중요**: 각 주요 섹션/컴포넌트에 data-editable="true" 속성과 고유한 data-section-id="section-N" 속성을 추가하세요 (나중에 드래그/리사이즈 편집을 위해 필요)
+11. **테이블/그리드 중요 (매우 엄격)**:
     - 사용자가 "1행"이라고 명시한 경우, **절대로 여러 행으로 나누지 마세요**.
     - **flex-col, space-y, grid-rows 사용 금지** - 이들은 수직 배치를 만듭니다.
     - 반드시 **flex-row 또는 grid-cols**만 사용하세요.
     - 예: "1행 × 10열" → <table><tr><td>1</td><td>2</td>...<td>10</td></tr></table> 또는 grid grid-cols-10
     - 예: "지정현황, 사업현황 1행" → <div class="grid grid-cols-2"> 또는 <div class="flex flex-row gap-4">
     - **모든 요소가 가로로 나란히** 배치되어야 합니다.
-11. **빈 공간 처리 금지**: 사용자가 요구하지 않은 설명 텍스트나 placeholder를 임의로 추가하지 마세요. 예를 들어 "여기에 내용이 표시됩니다", "정보를 입력하세요" 같은 문구를 넣지 말고, 사용자가 명시한 요소(버튼, 입력필드, 라벨 등)만 생성하세요. 빈 영역은 빈 공간으로 남겨두세요.
+12. **빈 공간 처리 금지**: 사용자가 요구하지 않은 설명 텍스트나 placeholder를 임의로 추가하지 마세요. 예를 들어 "여기에 내용이 표시됩니다", "정보를 입력하세요" 같은 문구를 넣지 말고, 사용자가 명시한 요소(버튼, 입력필드, 라벨 등)만 생성하세요. 빈 영역은 빈 공간으로 남겨두세요.
 
 # 팝업 구현 규칙
-11. <head> 내부에 다음 CSS를 **반드시** 추가하세요:
+13. <head> 내부에 다음 CSS를 **반드시** 추가하세요:
     <style>
       .popup-overlay.hidden {
         display: none;
       }
     </style>
-12. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
-13. 각 팝업은 다음 구조로 생성하세요:
+14. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
+15. 각 팝업은 다음 구조로 생성하세요:
     <div id="popup-{N}" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
         <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
@@ -94,7 +98,7 @@ ${box.popupContent || '팝업 기본 내용'}` : ''}
         </div>
       </div>
     </div>
-14. </body> 태그 직전에 다음 JavaScript를 추가하세요:
+16. </body> 태그 직전에 다음 JavaScript를 추가하세요:
     <script>
       // 팝업 열기/닫기 로직
       document.querySelectorAll('[data-popup-trigger]').forEach(btn => {
