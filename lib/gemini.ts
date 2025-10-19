@@ -51,10 +51,11 @@ ${box.hasPopup ? `- **팝업 기능**: 이 영역에 "${box.popupTriggerText || 
 7. 각 영역을 명확히 구분 (border/background로 시각화)
 8. 실제 사용 가능한 수준의 퀄리티
 9. **중요**: 각 주요 섹션/컴포넌트에 data-editable="true" 속성과 고유한 data-section-id="section-N" 속성을 추가하세요 (나중에 드래그/리사이즈 편집을 위해 필요)
+10. **테이블/그리드 중요**: 사용자가 "1행"이라고 명시한 경우, 절대로 여러 행으로 나누지 말고 반드시 1행으로 유지하세요. 예를 들어 "1행 × 10열"이면 <table><tr><td>열1</td><td>열2</td>...<td>열10</td></tr></table> 형태로 생성하거나, grid 사용 시 grid-cols-10으로 설정하고 모든 요소가 한 줄에 배치되도록 하세요.
 
 # 팝업 구현 규칙
-10. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
-11. 각 팝업은 다음 구조로 생성하세요:
+11. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
+12. 각 팝업은 다음 구조로 생성하세요:
     <div id="popup-{N}" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
         <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
@@ -65,7 +66,7 @@ ${box.hasPopup ? `- **팝업 기능**: 이 영역에 "${box.popupTriggerText || 
         </div>
       </div>
     </div>
-12. </body> 태그 직전에 다음 JavaScript를 추가하세요:
+13. </body> 태그 직전에 다음 JavaScript를 추가하세요:
     <script>
       // 팝업 열기/닫기 로직
       document.querySelectorAll('[data-popup-trigger]').forEach(btn => {
