@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전문 웹 개발자 레이아웃</title>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for layout visualization and specific elements */
+        .section-border {
+            border: 1px solid #e0e0e0; /* Light gray border for section visibility */
+        }
+        .active-tab {
+            border-bottom: 2px solid black;
+            background-color: white;
+            color: black;
+            font-weight: bold;
+        }
+        .inactive-tab {
+            color: gray;
+        }
+        .label-bg {
+            background-color: #e0f2fe; /* Light blue background */
+            font-weight: 500;
+        }
+        input[type="text"], input[type="number"], select, textarea {
+            border: 1px solid #d1d5db; /* gray-300 */
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            width: 100%;
+        }
+        /* Specific input/select widths in tight grids */
+        .grid-input {
+            min-width: 0; /* Allow inputs to shrink in flex/grid */
+        }
+
+        /* Popup Specific Styles */
+        .popup-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .popup-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .popup-overlay:not(.hidden) {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 grid grid-cols-12 gap-y-6">
+
+        <!-- 영역 2 (Y축 0px) - Tabs -->
+        <div data-editable="true" data-section-id="section-2" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white min-h-[152px] flex flex-col">
+            <div class="flex border-b border-gray-300">
+                <button class="px-6 py-3 text-lg border-t border-l border-r border-transparent rounded-t-md active-tab -mb-px">견적서 관리</button>
+                <button class="px-6 py-3 text-lg inactive-tab">계약서 관리</button>
+                <button class="px-6 py-3 text-lg inactive-tab">해약서 관리</button>
+                <button class="px-6 py-3 text-lg inactive-tab">신청내역</button>
+            </div>
+            <div class="flex-grow p-4 text-gray-600">
+                <!-- 탭 컨텐츠는 요청에 없으므로 비워둠 -->
+            </div>
+        </div>
+
+        <!-- 영역 1 (Y축 162.99px) - 지정현황/사업현황 -->
+        <div data-editable="true" data-section-id="section-1" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white p-4 min-h-[152px] flex flex-col justify-between space-y-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <span class="label-bg px-3 py-2 rounded-md">지정현황</span>
+                    <label for="area1-biz-count-1" class="sr-only">사업장수</label>
+                    <input type="text" id="area1-biz-count-1" placeholder="사업장수" class="grid-input flex-1 min-w-[120px]">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="area1-worker-count-1" class="sr-only">근로자수</label>
+                    <input type="text" id="area1-worker-count-1" placeholder="근로자수" class="grid-input flex-1 min-w-[120px]">
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <span class="label-bg px-3 py-2 rounded-md">사업현황</span>
+                    <label for="area1-biz-count-2" class="sr-only">사업장수</label>
+                    <input type="text" id="area1-biz-count-2" placeholder="사업장수" class="grid-input flex-1 min-w-[120px]">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="area1-worker-count-2" class="sr-only">근로자수</label>
+                    <input type="text" id="area1-worker-count-2" placeholder="근로자수" class="grid-input flex-1 min-w-[120px]">
+                </div>
+            </div>
+        </div>
+
+        <!-- 영역 3 (Y축 318.00px) - 견적내용 -->
+        <div data-editable="true" data-section-id="section-3" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white p-4 min-h-[159px] flex flex-wrap items-start justify-between gap-4">
+            <span class="label-bg px-3 py-2 rounded-md self-start">견적내용</span>
+            <div class="flex flex-wrap items-center gap-4 ml-auto">
+                <select class="grid-input min-w-[150px]">
+                    <option>보건관리</option>
+                    <option>직무스트레스 평가</option>
+                </select>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">등록</button>
+            </div>
+        </div>
+
+        <!-- 영역 4 (Y축 482px) - 3행 × 4열 테이블 -->
+        <div data-editable="true" data-section-id="section-4" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white p-4 min-h-[274px]">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center mb-2">
+                <div class="label-bg p-2 rounded-md">사업장명</div>
+                <div class="flex items-center gap-2 md:col-span-1">
+                    <select class="grid-input flex-1">
+                        <option>신성기업(주)</option>
+                    </select>
+                    <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-md text-sm whitespace-nowrap" data-popup-trigger="popup-4">조회</button>
+                    <button class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-bold py-2 px-3 rounded-md text-sm whitespace-nowrap">추가</button>
+                </div>
+                <div class="label-bg p-2 rounded-md">비교견적 여부</div>
+                <div>
+                    <input type="checkbox" id="compare-quote" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="compare-quote" class="ml-2 text-gray-700">비교견적</label>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center mb-2">
+                <div class="label-bg p-2 rounded-md">주소</div>
+                <div></div>
+                <div class="label-bg p-2 rounded-md">전화번호</div>
+                <input type="text" class="grid-input">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                <div class="label-bg p-2 rounded-md">이메일</div>
+                <div></div>
+                <div class="label-bg p-2 rounded-md">팩스번호</div>
+                <input type="text" class="grid-input">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-center mt-2">
+                <div class="label-bg p-2 rounded-md">담당자/직책</div>
+                <input type="text" class="grid-input">
+                <div class="label-bg p-2 rounded-md">휴대폰</div>
+                <input type="text" class="grid-input">
+            </div>
+        </div>
+
+        <!-- 영역 5 (Y축 770px) - 1행 × 10열 테이블 (5쌍의 라벨-입력필드) -->
+        <div data-editable="true" data-section-id="section-5" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white p-4 min-h-[146px]">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 items-center">
+                <div class="label-bg p-2 rounded-md text-center">인당단가</div>
+                <input type="number" class="grid-input text-right">
+
+                <div class="label-bg p-2 rounded-md text-center">인원</div>
+                <input type="number" class="grid-input text-right">
+
+                <div class="label-bg p-2 rounded-md text-center">월급액</div>
+                <input type="number" class="grid-input text-right">
+
+                <div class="label-bg p-2 rounded-md text-center">개월</div>
+                <input type="number" class="grid-input text-right">
+
+                <div class="label-bg p-2 rounded-md text-center">연간급액</div>
+                <input type="number" class="grid-input text-right">
+            </div>
+        </div>
+
+        <!-- 영역 6 (Y축 920px) - 비고 및 업무분야 -->
+        <div data-editable="true" data-section-id="section-6" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white p-4 min-h-[200px] flex flex-col sm:flex-row gap-4">
+            <div class="flex flex-col justify-between w-full sm:w-1/4">
+                <span class="label-bg px-3 py-2 rounded-md self-start">비고</span>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md self-start sm:self-auto mt-4 sm:mt-0">업무분야</button>
+            </div>
+            <textarea class="grid-input flex-grow h-32 sm:h-auto min-h-[100px]"></textarea>
+        </div>
+
+        <!-- 영역 7 (Y축 1134px) - 견적서 발행 내역 제목 및 버튼 -->
+        <div data-editable="true" data-section-id="section-7" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white p-4 min-h-[200px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <span class="label-bg px-3 py-2 rounded-md text-lg font-bold self-start sm:self-auto">견적서 발행 내역</span>
+            <div class="flex flex-wrap gap-2 justify-end">
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md text-sm">당월전체</button>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md text-sm">당해연도</button>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md text-sm">총월미승인</button>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md text-sm">총해미승인</button>
+            </div>
+        </div>
+
+        <!-- 영역 8 (Y축 1348px) - 데이터 테이블 -->
+        <div data-editable="true" data-section-id="section-8" class="col-span-12 md:col-span-10 md:col-start-2 section-border rounded-md shadow-sm bg-white p-4 min-h-[368px]">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-blue-600 text-white">
+                        <tr>
+                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">견적서 번호</th>
+                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">사업장명</th>
+                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">견적구분</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider">계약서</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider">출력</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider">매일전송</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider">문자전송</th>
+                            <th scope="col" class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">인원</th>
+                            <th scope="col" class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">인당단가</th>
+                            <th scope="col" class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">총금액</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider">비교견적</th>
+                            <th scope="col" class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider">삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- 검색 드롭다운 -->
+                        <tr class="bg-gray-50">
+                            <td class="px-3 py-2 whitespace-nowrap">
+                                <label for="search-quote-num" class="sr-only">검색: 견적서 번호</label>
+                                <select id="search-quote-num" class="grid-input w-full text-xs">
+                                    <option>검색:</option>
+                                </select>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap">
+                                <label for="search-biz-name" class="sr-only">검색: 사업장명</label>
+                                <select id="search-biz-name" class="grid-input w-full text-xs">
+                                    <option>검색:</option>
+                                </select>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap">
+                                <label for="search-quote-type" class="sr-only">검색: 견적구분</label>
+                                <select id="search-quote-type" class="grid-input w-full text-xs">
+                                    <option>검색:</option>
+                                </select>
+                            </td>
+                            <td colspan="7"></td> <!-- 나머지 컬럼은 비워둠 -->
+                            <td class="px-3 py-2 whitespace-nowrap text-right">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-md text-xs whitespace-nowrap" data-popup-trigger="popup-8">조회</button>
+                            </td>
+                            <td></td>
+                        </tr>
+                        <!-- 데이터 행 -->
+                        <tr>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">E202500008</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">지멘스</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">직무스트레스평가</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-md text-xs">계약서</button>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-md text-xs">출력</button>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-md text-xs">매일전송</button>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-md text-xs">문자전송</button>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">100</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">9,100</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">1,421,300</td>
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                                <input type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap text-center">
+                                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-md text-xs">삭제</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div> <!-- End of main container -->
+
+    <!-- Popup 4 -->
+    <div id="popup-4" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
+        <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+        <div data-editable="true" data-section-id="popup-4-content">
+          <h2 class="text-2xl font-bold mb-4">사업장 조회 팝업</h2>
+          <p>여기에 사업장 조회 관련 내용을 입력하세요.</p>
+          <div class="mt-4 p-4 border rounded-md bg-gray-50">
+            <p>검색 필드, 결과 테이블 등이 포함될 수 있습니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup 8 -->
+    <div id="popup-8" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
+        <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+        <div data-editable="true" data-section-id="popup-8-content">
+          <h2 class="text-2xl font-bold mb-4">견적서 발행 내역 조회 팝업</h2>
+          <p>여기에 견적서 발행 내역 상세 조회 관련 내용을 입력하세요.</p>
+          <div class="mt-4 p-4 border rounded-md bg-gray-50">
+            <p>상세 검색 필드, 필터링 옵션, 결과 목록 등이 들어갑니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 팝업 열기/닫기 로직
+      document.querySelectorAll('[data-popup-trigger]').forEach(btn => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation(); // Prevent clicks from propagating to parent elements
+          const popupId = btn.getAttribute('data-popup-trigger');
+          document.getElementById(popupId).classList.remove('hidden');
+        });
+      });
+
+      document.querySelectorAll('.popup-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay || e.target.classList.contains('popup-close')) {
+            overlay.classList.add('hidden');
+          }
+        });
+      });
+
+      // ESC 키로 팝업 닫기
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.popup-overlay').forEach(p => p.classList.add('hidden'));
+        }
+      });
+    </script>
+</body>
+</html>
