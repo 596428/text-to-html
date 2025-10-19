@@ -7,6 +7,11 @@ export interface Box {
   width: number;      // 그리드 컬럼 수 (1-12)
   height: number;     // 높이 (px)
   content: string;    // 사용자 입력 설명
+
+  // 팝업 관련 필드
+  hasPopup?: boolean;           // 팝업 보유 여부
+  popupContent?: string;        // 팝업 HTML 컨텐츠 (HTMLEditor로 편집 가능)
+  popupTriggerText?: string;    // 팝업 트리거 버튼 텍스트
 }
 
 export interface HTMLVersion {
@@ -41,6 +46,9 @@ export interface AppState {
   removeBox: (id: string) => void;
   selectBox: (id: string | null) => void;
   clearBoxes: () => void;
+
+  // 팝업 관련 액션
+  setBoxPopup: (boxId: string, popupContent: string) => void;
 
   // HTML 버전 관리
   htmlVersions: HTMLVersion[];

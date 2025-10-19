@@ -1,28 +1,55 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useStore } from '@/lib/store';
+import { useRef, useState, useEffect } from 'react';
 
-interface HTMLEditorProps {
-  onComplete: () => void;
+interface PopupEditorProps {
+  boxId: string;
+  popupContent: string;
+  onSave: (content: string) => void;
+  onClose: () => void;
 }
 
-export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
+export default function PopupEditor({ boxId, popupContent, onSave, onClose }: PopupEditorProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [debugInfo, setDebugInfo] = useState<string>('초기화 중...');
   const [isReady, setIsReady] = useState(false);
+  const [currentHTML, setCurrentHTML] = useState(popupContent);
 
-  const htmlVersions = useStore((state) => state.htmlVersions);
-  const currentVersion = useStore((state) => state.currentVersion);
-  const addVersion = useStore((state) => state.addVersion);
-
-  const currentHTML = htmlVersions.find((v) => v.version === currentVersion)?.html || '';
-
-  // iframe 로드 핸들러
-  const handleIframeLoad = () => {
-    if (!iframeRef.current) {
-      return;
+  // 팝업 컨텐츠가 없으면 기본 템플릿 제공
+  useEffect(() => {
+    if (!popupContent) {
+      setCurrentHTML(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
     }
+    .popup-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="popup-container" data-editable="true">
+    <h2>팝업 제목</h2>
+    <p>여기에 팝업 내용을 입력하세요.</p>
+  </div>
+</body>
+</html>`);
+    } else {
+      setCurrentHTML(popupContent);
+    }
+  }, [popupContent]);
+
+  // iframe 로드 핸들러 (HTMLEditor.tsx와 동일한 로직)
+  const handleIframeLoad = () => {
+    if (!iframeRef.current) return;
 
     const iframe = iframeRef.current;
     const doc = iframe.contentDocument;
@@ -32,13 +59,6 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       setDebugInfo('❌ iframe 접근 실패');
       return;
     }
-
-    // 팝업 오버레이를 편집 모드에서 표시 (hidden 클래스 제거)
-    doc.querySelectorAll('.popup-overlay').forEach(overlay => {
-      (overlay as HTMLElement).classList.remove('hidden');
-      (overlay as HTMLElement).style.position = 'relative';  // 편집 모드에서는 relative
-      (overlay as HTMLElement).style.opacity = '0.9';        // 살짝 투명하게
-    });
 
     // 편집 가능한 요소 찾기
     let allElements = doc.querySelectorAll('[data-editable="true"]');
@@ -71,7 +91,6 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
       allElements = Array.from(elementsSet) as any;
     }
-
 
     if (allElements.length === 0) {
       setDebugInfo('❌ 편집 가능한 요소를 찾을 수 없습니다');
@@ -107,17 +126,14 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       handle.style.zIndex = '10000';
       handle.dataset.position = position;
 
-      // 위치 설정
       if (position.includes('n')) handle.style.top = '-5px';
       if (position.includes('s')) handle.style.bottom = '-5px';
       if (position.includes('w')) handle.style.left = '-5px';
       if (position.includes('e')) handle.style.right = '-5px';
 
-      // 커서 설정
       if (position === 'nw' || position === 'se') handle.style.cursor = 'nwse-resize';
       if (position === 'ne' || position === 'sw') handle.style.cursor = 'nesw-resize';
 
-      // 리사이즈 시작
       handle.addEventListener('mousedown', (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -168,13 +184,11 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
     const showControls = (element: HTMLElement) => {
       removeControls();
 
-      // 리사이즈 핸들 4개 추가
       const positions = ['nw', 'ne', 'sw', 'se'];
       positions.forEach(pos => {
         element.appendChild(createResizeHandle(pos));
       });
 
-      // 삭제 버튼 추가
       element.appendChild(createDeleteButton());
     };
 
@@ -193,33 +207,27 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
         el.style.position = 'relative';
       }
 
-      // 현재 크기를 명시적으로 설정 (가로 방향 리사이즈 가능하게)
       const computedStyle = win.getComputedStyle(el);
       if (!el.style.width) {
         el.style.width = computedStyle.width;
-        // max-width 제약 제거 (리사이즈 가능하게)
         el.style.maxWidth = 'none';
       }
       if (!el.style.height) {
         el.style.height = computedStyle.height;
         el.style.maxHeight = 'none';
       }
-      // box-sizing 명시
       el.style.boxSizing = 'border-box';
 
       el.style.cursor = 'move';
       el.style.outline = '2px dashed rgba(59, 130, 246, 0.5)';
       el.style.outlineOffset = '2px';
 
-      // mousedown - 드래그 시작
       el.addEventListener('mousedown', (e: MouseEvent) => {
-        // 리사이즈 핸들이나 삭제 버튼 클릭이면 무시
         const target = e.target as HTMLElement;
         if (target.classList.contains('resize-handle') || target.classList.contains('delete-btn')) {
           return;
         }
 
-        // 텍스트 편집 중이면 드래그 무시
         if (isEditingText) {
           return;
         }
@@ -233,39 +241,32 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
         startLeft = parseInt(el.style.left || '0');
         startTop = parseInt(el.style.top || '0');
 
-        // 선택 강조
         allElements.forEach(elem => {
           (elem as HTMLElement).style.outline = '2px dashed rgba(59, 130, 246, 0.5)';
         });
         el.style.outline = '3px solid rgb(59, 130, 246)';
         el.style.zIndex = '9999';
 
-        // 컨트롤 표시
         showControls(el);
 
         setDebugInfo(`✅ 선택: ${el.getAttribute('data-section-id')}`);
       });
 
-      // dblclick - 텍스트 편집 시작
       el.addEventListener('dblclick', (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         const target = e.target as HTMLElement;
 
-        // 핸들이나 버튼 더블클릭은 무시
         if (target.classList.contains('resize-handle') || target.classList.contains('delete-btn')) {
           return;
         }
 
-
         isEditingText = true;
 
-        // contentEditable 활성화
         el.contentEditable = 'true';
         el.style.cursor = 'text';
 
-        // 대화형 요소들만 보호 (input, select, textarea, button만)
         const interactiveElements = el.querySelectorAll('input, select, textarea, button, a');
         interactiveElements.forEach(child => {
           (child as HTMLElement).contentEditable = 'false';
@@ -274,7 +275,6 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
         el.focus();
 
-        // 전체 콘텐츠 선택
         const range = doc.createRange();
         const selection = win.getSelection();
 
@@ -285,11 +285,11 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
             selection.addRange(range);
           }
         } catch (error) {
+          // 선택 오류 무시
         }
 
         setDebugInfo(`✏️ 텍스트 편집 중: ${el.getAttribute('data-section-id')}`);
 
-        // Enter 키로 편집 종료
         const handleKeyDown = (ke: KeyboardEvent) => {
           if (ke.key === 'Enter' && !ke.shiftKey) {
             ke.preventDefault();
@@ -297,13 +297,11 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
           }
         };
 
-        // 포커스 아웃 시 편집 종료
         const handleBlur = () => {
           isEditingText = false;
           el.contentEditable = 'false';
           el.style.cursor = 'move';
 
-          // 자식 요소 보호 속성 제거
           const protectedChildren = el.querySelectorAll('[data-protected="true"]');
           protectedChildren.forEach(child => {
             child.removeAttribute('data-protected');
@@ -324,9 +322,7 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
     setDebugInfo(`✅ 편집 가능한 요소: ${editableCount}개`);
 
-    // mousemove - 드래그 또는 리사이즈
     doc.addEventListener('mousemove', (e: MouseEvent) => {
-      // 드래그 중
       if (draggedElement && !resizingElement) {
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
@@ -334,7 +330,6 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
         draggedElement.style.top = `${startTop + deltaY}px`;
       }
 
-      // 리사이즈 중
       if (resizingElement && resizeDirection) {
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
@@ -347,7 +342,6 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
         if (resizeDirection.includes('s')) newHeight = startHeight + deltaY;
         if (resizeDirection.includes('n')) newHeight = startHeight - deltaY;
 
-        // 최소 크기 제한
         newWidth = Math.max(50, newWidth);
         newHeight = Math.max(50, newHeight);
 
@@ -356,7 +350,6 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       }
     });
 
-    // mouseup - 드래그/리사이즈 종료
     doc.addEventListener('mouseup', () => {
       if (draggedElement) {
         const sectionId = draggedElement.getAttribute('data-section-id');
@@ -375,16 +368,16 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
     setIsReady(true);
   };
 
-  const handleApplyChanges = () => {
+  const handleSave = () => {
     if (!iframeRef.current) return;
 
     const doc = iframeRef.current.contentDocument;
     if (!doc) return;
 
-    // 1. 컨트롤 제거 (핸들, 삭제 버튼)
+    // 컨트롤 제거
     doc.querySelectorAll('.resize-handle, .delete-btn').forEach(el => el.remove());
 
-    // 2. 편집용 스타일 및 속성 제거 (outline, cursor, zIndex, contentEditable 등)
+    // 편집용 스타일 제거
     doc.querySelectorAll('[data-editable="true"]').forEach(el => {
       const element = el as HTMLElement;
       element.style.outline = '';
@@ -393,69 +386,64 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       if (element.style.zIndex === '9999') {
         element.style.zIndex = '';
       }
-      // contentEditable 속성 제거
       element.contentEditable = 'false';
       element.removeAttribute('contenteditable');
     });
 
-    // 3. 보호된 자식 요소 속성 제거
+    // 보호된 자식 요소 속성 제거
     doc.querySelectorAll('[data-protected="true"]').forEach(el => {
       el.removeAttribute('data-protected');
       el.removeAttribute('contenteditable');
     });
 
-    // 4. 팝업 오버레이 복원 (hidden 클래스 추가, 스타일 제거)
-    doc.querySelectorAll('.popup-overlay').forEach(overlay => {
-      const element = overlay as HTMLElement;
-      element.classList.add('hidden');
-      element.style.position = '';
-      element.style.opacity = '';
-    });
-
     const updatedHTML = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
-    addVersion(updatedHTML, '사용자가 HTML 요소를 직접 편집함 (이동/크기조정/삭제/텍스트수정/팝업편집)');
-    onComplete();
+    onSave(updatedHTML);
   };
 
-  if (!currentHTML) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-400">
-        생성된 HTML이 없습니다
-      </div>
-    );
-  }
-
   return (
-    <div className="h-full flex flex-col">
-      {/* 편집 도구 바 */}
-      <div className="bg-blue-50 border-b border-blue-200 p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            <strong>편집 모드</strong>: 클릭(선택) → 드래그(이동) | 모서리핸들(크기) | X버튼(삭제) | 더블클릭(텍스트편집)
-            <br />
-            <span className="text-xs text-gray-600">상태: {debugInfo}</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+         onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-2xl w-11/12 h-5/6 flex flex-col"
+           onClick={(e) => e.stopPropagation()}>
+        {/* 헤더 */}
+        <div className="bg-blue-50 border-b border-blue-200 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">팝업 내용 편집</h3>
+              <p className="text-xs text-gray-600 mt-1">
+                클릭(선택) → 드래그(이동) | 모서리핸들(크기) | X버튼(삭제) | 더블클릭(텍스트편집)
+              </p>
+              <p className="text-xs text-gray-500">상태: {debugInfo}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                disabled={!isReady}
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors disabled:bg-gray-400"
+              >
+                💾 저장
+              </button>
+              <button
+                onClick={onClose}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                취소
+              </button>
+            </div>
           </div>
-
-          <button
-            onClick={handleApplyChanges}
-            disabled={!isReady}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors disabled:bg-gray-400"
-          >
-            💾 변경사항 저장
-          </button>
         </div>
-      </div>
 
-      {/* iframe 편집 영역 */}
-      <div className="flex-1 overflow-auto bg-gray-100">
-        <iframe
-          ref={iframeRef}
-          srcDoc={currentHTML}
-          onLoad={handleIframeLoad}
-          sandbox="allow-scripts allow-same-origin"
-          className="w-full h-full border-0"
-          title="HTML Editor"
-        />
+        {/* iframe 편집 영역 */}
+        <div className="flex-1 overflow-auto bg-gray-100">
+          <iframe
+            ref={iframeRef}
+            srcDoc={currentHTML}
+            onLoad={handleIframeLoad}
+            sandbox="allow-scripts allow-same-origin"
+            className="w-full h-full border-0"
+            title="Popup Content Editor"
+          />
+        </div>
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ export async function generateHTML(boxes: Box[]): Promise<string> {
   const genAI = getGenAI();
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+  // 팝업 정보 포함
   const prompt = `
 당신은 전문 웹 개발자입니다. 다음 레이아웃 정보를 기반으로 **완전한 단일 HTML 파일**을 생성하세요.
 
@@ -37,6 +38,7 @@ ${boxes.map((box, i) => `
 - **위치**: ${box.x}열 (0-11), Y축 ${box.y}px
 - **크기**: ${box.width}/12 컬럼, 높이 ${box.height}px
 - **요구사항**: ${box.content || '(설명 없음)'}
+${box.hasPopup ? `- **팝업 기능**: 이 영역에 "${box.popupTriggerText || '상세보기'}" 버튼을 추가하고, 클릭 시 팝업이 표시되도록 구현하세요. 팝업 ID는 "popup-${i + 1}"로 설정하세요.` : ''}
 `).join('\n')}
 
 # 생성 규칙
@@ -50,6 +52,45 @@ ${boxes.map((box, i) => `
 8. 실제 사용 가능한 수준의 퀄리티
 9. **중요**: 각 주요 섹션/컴포넌트에 data-editable="true" 속성과 고유한 data-section-id="section-N" 속성을 추가하세요 (나중에 드래그/리사이즈 편집을 위해 필요)
 
+# 팝업 구현 규칙
+10. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
+11. 각 팝업은 다음 구조로 생성하세요:
+    <div id="popup-{N}" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
+        <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+        <div data-editable="true" data-section-id="popup-{N}-content">
+          <!-- 팝업 컨텐츠 영역 (사용자가 편집 가능) -->
+          <h2 class="text-2xl font-bold mb-4">팝업 제목</h2>
+          <p>팝업 내용을 여기에 입력하세요.</p>
+        </div>
+      </div>
+    </div>
+12. </body> 태그 직전에 다음 JavaScript를 추가하세요:
+    <script>
+      // 팝업 열기/닫기 로직
+      document.querySelectorAll('[data-popup-trigger]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const popupId = btn.getAttribute('data-popup-trigger');
+          document.getElementById(popupId).classList.remove('hidden');
+        });
+      });
+
+      document.querySelectorAll('.popup-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay || e.target.classList.contains('popup-close')) {
+            overlay.classList.add('hidden');
+          }
+        });
+      });
+
+      // ESC 키로 팝업 닫기
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.popup-overlay').forEach(p => p.classList.add('hidden'));
+        }
+      });
+    </script>
+
 # 출력 형식
 - HTML 코드만 반환 (마크다운 코드블록 없이)
 - 설명/주석 최소화
@@ -61,7 +102,48 @@ ${boxes.map((box, i) => `
   // 코드블록 제거 (```html ... ```)
   html = html.replace(/^```html?\n?/i, '').replace(/\n?```$/, '');
 
+  // 사용자가 편집한 팝업 컨텐츠를 HTML에 통합
+  html = integratePopupContent(html, boxes);
+
   return html.trim();
+}
+
+// ============ 팝업 컨텐츠 통합 ============
+
+function integratePopupContent(html: string, boxes: Box[]): string {
+  boxes.forEach((box, i) => {
+    if (box.hasPopup && box.popupContent) {
+      const popupId = `popup-${i + 1}`;
+
+      // 사용자가 편집한 팝업 HTML에서 body 내부 컨텐츠만 추출
+      let bodyContent = box.popupContent;
+
+      // <body> 태그가 있으면 그 내부만 추출
+      const bodyMatch = bodyContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      if (bodyMatch) {
+        bodyContent = bodyMatch[1];
+      }
+
+      // 기존 팝업 영역을 찾아서 대체
+      const popupRegex = new RegExp(
+        `<div id="${popupId}"[^>]*class="popup-overlay[^"]*"[^>]*>.*?</div>\\s*</div>\\s*</div>`,
+        'gs'
+      );
+
+      const customPopup = `<div id="${popupId}" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
+        <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+        <div data-editable="true" data-section-id="popup-${i + 1}-content">
+          ${bodyContent}
+        </div>
+      </div>
+    </div>`;
+
+      html = html.replace(popupRegex, customPopup);
+    }
+  });
+
+  return html;
 }
 
 // ============ HTML 수정 ============

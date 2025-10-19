@@ -45,6 +45,13 @@ export const useStore = create<AppState>()(
 
         clearBoxes: () => set({ boxes: [], selectedBoxId: null }),
 
+        // ========== 팝업 관리 ==========
+        setBoxPopup: (boxId, popupContent) => set((state) => ({
+          boxes: state.boxes.map(box =>
+            box.id === boxId ? { ...box, popupContent } : box
+          )
+        })),
+
         // ========== HTML 버전 관리 ==========
         addVersion: (html, prompt) => set((state) => {
           const newVersion: HTMLVersion = {
