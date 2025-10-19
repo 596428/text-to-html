@@ -9,15 +9,22 @@ import { Box } from '@/types';
 
 const LOG_DIR = path.join(process.cwd(), 'logs');
 
-// 로그 디렉토리 생성
-if (!fs.existsSync(LOG_DIR)) {
+// 로그 디렉토리 생성 (개발 환경에서만)
+if (process.env.NODE_ENV === 'development' && !fs.existsSync(LOG_DIR)) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
 /**
  * HTML 생성 요청 로그 저장
+ * 로컬 개발 환경에서만 파일로 저장
  */
 export function logHTMLGeneration(boxes: Box[], prompt: string) {
+  // 프로덕션에서는 파일 로깅 비활성화
+  if (process.env.NODE_ENV !== 'development') {
+    console.log('[Logger] HTML generation (production - file logging disabled)');
+    return;
+  }
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const logFile = path.join(LOG_DIR, `html-generation-${timestamp}.log`);
 
@@ -48,8 +55,15 @@ export function logHTMLGeneration(boxes: Box[], prompt: string) {
 
 /**
  * HTML 수정 요청 로그 저장
+ * 로컬 개발 환경에서만 파일로 저장
  */
 export function logHTMLModification(currentHTML: string, userRequest: string, prompt: string) {
+  // 프로덕션에서는 파일 로깅 비활성화
+  if (process.env.NODE_ENV !== 'development') {
+    console.log('[Logger] HTML modification (production - file logging disabled)');
+    return;
+  }
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const logFile = path.join(LOG_DIR, `html-modification-${timestamp}.log`);
 
