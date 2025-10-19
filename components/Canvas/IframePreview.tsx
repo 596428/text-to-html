@@ -54,13 +54,11 @@ export default function IframePreview() {
 
   // HTML 프리뷰
   return (
-    <div className="flex-1 bg-white overflow-auto">
-      <iframe
-        ref={iframeRef}
-        sandbox="allow-scripts allow-same-origin"
-        className="w-full h-full border-0"
-        title="HTML Preview"
-      />
-    </div>
+    <iframe
+      ref={iframeRef}
+      sandbox="allow-scripts allow-same-origin"
+      className="w-full h-full border-0"
+      title="HTML Preview"
+    />
   );
 }

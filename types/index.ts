@@ -24,7 +24,13 @@ export interface ChatMessage {
 
 // ============ 상태 관리 인터페이스 ============
 
+export type CanvasMode = 'edit' | 'preview';
+
 export interface AppState {
+  // 캔버스 모드
+  canvasMode: CanvasMode;
+  setCanvasMode: (mode: CanvasMode) => void;
+
   // 레이아웃 상태
   boxes: Box[];
   selectedBoxId: string | null;

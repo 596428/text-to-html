@@ -8,6 +8,7 @@ export const useStore = create<AppState>()(
     persist(
       (set) => ({
         // ========== 초기 상태 ==========
+        canvasMode: 'edit' as const,
         boxes: [],
         selectedBoxId: null,
         htmlVersions: [],
@@ -68,6 +69,7 @@ export const useStore = create<AppState>()(
         clearChat: () => set({ chatMessages: [] }),
 
         // ========== UI 상태 ==========
+        setCanvasMode: (mode) => set({ canvasMode: mode }),
         setGenerating: (value) => set({ isGenerating: value }),
         setError: (error) => set({ error })
       }),

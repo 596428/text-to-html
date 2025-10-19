@@ -26,7 +26,7 @@ function getGenAI() {
 
 export async function generateHTML(boxes: Box[]): Promise<string> {
   const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
 당신은 전문 웹 개발자입니다. 다음 레이아웃 정보를 기반으로 **완전한 단일 HTML 파일**을 생성하세요.
@@ -70,7 +70,7 @@ export async function modifyHTML(
   userRequest: string
 ): Promise<string> {
   const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
 당신은 HTML 수정 전문가입니다.

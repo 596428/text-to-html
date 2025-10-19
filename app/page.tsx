@@ -2,8 +2,7 @@
 
 import dynamic from 'next/dynamic';
 
-const LayoutEditor = dynamic(() => import('@/components/LayoutEditor'), { ssr: false });
-const PreviewPanel = dynamic(() => import('@/components/PreviewPanel'), { ssr: false });
+const Canvas = dynamic(() => import('@/components/Canvas/Canvas'), { ssr: false });
 const ChatPanel = dynamic(() => import('@/components/ChatPanel'), { ssr: false });
 
 export default function Home() {
@@ -17,16 +16,11 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 메인 3-Panel */}
+      {/* 메인 2-Panel */}
       <main className="flex-1 flex overflow-hidden">
-        {/* 좌측: 레이아웃 에디터 (30%) */}
-        <section className="w-[30%] border-r border-gray-300 bg-white shadow-xl">
-          <LayoutEditor />
-        </section>
-
-        {/* 중앙: 프리뷰 (40%) */}
-        <section className="w-[40%] border-r border-gray-300 bg-gray-50">
-          <PreviewPanel />
+        {/* 좌측: Canvas (편집 + 프리뷰) (70%) */}
+        <section className="w-[70%] border-r border-gray-300 bg-white shadow-xl">
+          <Canvas />
         </section>
 
         {/* 우측: 챗봇 (30%) */}
