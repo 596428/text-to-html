@@ -121,6 +121,14 @@ function integratePopupContent(html: string, boxes: Box[]): string {
     if (box.hasPopup && box.popupContent) {
       const popupId = `popup-${i + 1}`;
 
+      // popupContent가 HTML인지 확인 (<!DOCTYPE, <html>, <body> 등이 있으면 HTML)
+      const isHTML = /<(!DOCTYPE|html|body)/i.test(box.popupContent);
+
+      // HTML이 아니면 Gemini가 생성한 팝업을 그대로 사용
+      if (!isHTML) {
+        return;
+      }
+
       // 사용자가 편집한 팝업 HTML에서 body 내부 컨텐츠만 추출
       let bodyContent = box.popupContent;
 
