@@ -12,7 +12,7 @@ export default function Home() {
       <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 shadow-lg">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Text-to-HTML Generator</h1>
-          <div className="text-sm opacity-90">AI-Powered Web Design</div>
+          <div className="text-sm opacity-90">Last Modified: 2025-10-20 09:24</div>
         </div>
       </header>
 

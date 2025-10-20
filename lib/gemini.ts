@@ -49,7 +49,7 @@ ${box.popupContent || '팝업 기본 내용'}` : ''}
 2. **TailwindCSS CDN 고정 버전**: 반드시 다음 CDN을 사용하세요
    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 3. **컨테이너 너비 표준화**:
-   - 메인 컨테이너: <div class="container mx-auto max-w-7xl space-y-4">
+   - 메인 컨테이너: <div class="container mx-auto max-w-screen-2xl space-y-4">
    - w-10/12, w-11/12 같은 비율 너비 사용 금지
 4. **패딩/간격 표준**:
    - 버튼: px-4 py-2
@@ -89,7 +89,7 @@ ${box.popupContent || '팝업 기본 내용'}` : ''}
 14. 팝업이 있는 영역에는 data-popup-trigger="popup-{N}" 속성을 가진 버튼을 추가하세요
 15. 각 팝업은 다음 구조로 생성하세요:
     <div id="popup-{N}" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
+      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-[90vw] w-11/12 max-h-[90vh] overflow-auto p-6 relative">
         <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
         <div data-editable="true" data-section-id="popup-{N}-content">
           <!-- 팝업 컨텐츠 영역 (사용자가 편집 가능) -->
@@ -175,7 +175,7 @@ function integratePopupContent(html: string, boxes: Box[]): string {
       );
 
       const customPopup = `<div id="${popupId}" class="popup-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-5/6 overflow-auto p-6 relative">
+      <div class="popup-content bg-white rounded-lg shadow-2xl max-w-[90vw] w-11/12 max-h-[90vh] overflow-auto p-6 relative">
         <button class="popup-close absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
         <div data-editable="true" data-section-id="popup-${i + 1}-content">
           ${bodyContent}
