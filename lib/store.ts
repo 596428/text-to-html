@@ -3,6 +3,33 @@ import { devtools, persist } from 'zustand/middleware';
 import { AppState, Box, ChatMessage, HTMLVersion } from '@/types';
 import { DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT } from '@/lib/constants';
 
+// ========== 마이그레이션 함수 ==========
+// 기존 Box 데이터를 새 스키마로 변환
+function migrateBox(box: Partial<Box>): Box {
+  return {
+    ...box,
+    id: box.id!,
+    x: box.x ?? 0,
+    y: box.y ?? 0,
+    width: box.width ?? DEFAULT_BOX_WIDTH,
+    height: box.height ?? DEFAULT_BOX_HEIGHT,
+    content: box.content ?? '',
+    // 새 필드는 선택적이므로 기본값 불필요 (undefined 허용)
+    layoutType: box.layoutType ?? 'simple', // 기본: simple 레이아웃
+  };
+}
+
+// 저장된 상태 마이그레이션
+function migrateState(state: any): Partial<AppState> {
+  if (!state) return {};
+
+  return {
+    boxes: (state.boxes ?? []).map(migrateBox),
+    htmlVersions: state.htmlVersions ?? [],
+    currentVersion: state.currentVersion ?? 0,
+  };
+}
+
 export const useStore = create<AppState>()(
   devtools(
     persist(
@@ -25,7 +52,8 @@ export const useStore = create<AppState>()(
             y: state.boxes.length * 250,
             width: DEFAULT_BOX_WIDTH,
             height: DEFAULT_BOX_HEIGHT,
-            content: ''
+            content: '',
+            layoutType: 'simple' // 기본값: simple 레이아웃
           };
           return { boxes: [...state.boxes, newBox] };
         }),
@@ -84,11 +112,17 @@ export const useStore = create<AppState>()(
       }),
       {
         name: 'text-to-html-storage',
+        version: 1, // 버전 추가 (향후 마이그레이션 추적용)
         partialize: (state) => ({
           boxes: state.boxes,
           htmlVersions: state.htmlVersions,
           currentVersion: state.currentVersion
-        })
+        }),
+        // 스토리지에서 읽어올 때 마이그레이션 적용
+        migrate: (persistedState: any, version: number) => {
+          const migrated = migrateState(persistedState);
+          return { ...persistedState, ...migrated };
+        }
       }
     )
   )

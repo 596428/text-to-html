@@ -1,5 +1,34 @@
 // ============ 핵심 데이터 모델 ============
 
+// 레이아웃 타입
+export type LayoutType = 'simple' | 'flex' | 'table';
+
+// 자식 요소 (Flex 레이아웃용)
+export interface ChildElement {
+  id: string;
+  content: string;          // 요소 설명
+  flexGrow?: number;        // flex-grow 값 (기본: 1)
+  flexShrink?: number;      // flex-shrink 값 (기본: 1)
+  flexBasis?: string;       // flex-basis 값 (기본: 'auto')
+  order?: number;           // 정렬 순서
+}
+
+// 테이블 구조
+export interface TableStructure {
+  rows: number;             // 행 수
+  cols: number;             // 열 수
+  cells: TableCell[][];     // 셀 데이터 (2차원 배열)
+  hasHeader?: boolean;      // 헤더 행 포함 여부
+}
+
+// 테이블 셀
+export interface TableCell {
+  content: string;          // 셀 내용 설명
+  rowSpan?: number;         // 행 병합 (기본: 1)
+  colSpan?: number;         // 열 병합 (기본: 1)
+  isHeader?: boolean;       // 헤더 셀 여부
+}
+
 export interface Box {
   id: string;
   x: number;          // 그리드 열 위치 (0-11)
@@ -7,6 +36,20 @@ export interface Box {
   width: number;      // 그리드 컬럼 수 (1-12)
   height: number;     // 높이 (px)
   content: string;    // 사용자 입력 설명
+
+  // 레이아웃 타입 (Phase 0 추가)
+  layoutType?: LayoutType;  // 기본: 'simple'
+
+  // Flex 레이아웃 관련 (Phase 1 사용)
+  flexDirection?: 'row' | 'column';           // flex 방향
+  flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';  // flex 줄바꿈
+  justifyContent?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
+  alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
+  gap?: number;                                // flex 간격 (px)
+  children?: ChildElement[];                   // 자식 요소 배열
+
+  // 테이블 레이아웃 관련 (Phase 2 사용)
+  tableStructure?: TableStructure;
 
   // 팝업 관련 필드
   hasPopup?: boolean;           // 팝업 보유 여부
