@@ -45,6 +45,8 @@ export const useStore = create<AppState>()(
 
         clearBoxes: () => set({ boxes: [], selectedBoxId: null }),
 
+        setBoxes: (boxes) => set({ boxes, selectedBoxId: null }),
+
         // ========== 팝업 관리 ==========
         setBoxPopup: (boxId, popupContent) => set((state) => ({
           boxes: state.boxes.map(box =>

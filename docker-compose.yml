@@ -1,0 +1,42 @@
+# docker-compose.yml for Text-to-HTML Generator
+
+version: '3.8'
+
+services:
+  text-to-html:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: text-to-html-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Gemini API Keys (3개 - .env 파일에서 로드)
+      - GEMINI_API_KEY_1=${GEMINI_API_KEY_1}
+      - GEMINI_API_KEY_2=${GEMINI_API_KEY_2}
+      - GEMINI_API_KEY_3=${GEMINI_API_KEY_3}
+
+      # Node 환경
+      - NODE_ENV=production
+
+      # Next.js 설정
+      - NEXT_TELEMETRY_DISABLED=1
+
+    # 볼륨 (선택사항 - 로그 저장용)
+    # volumes:
+    #   - ./logs:/app/logs
+
+    networks:
+      - text-to-html-network
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  text-to-html-network:
+    driver: bridge

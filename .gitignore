@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
 
 # vercel
 .vercel
@@ -35,8 +36,22 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# logs (prototype development)
+# logs
 /logs
+*.log
 
-# logs (prototype development)
-/logs
+# Docker
+*.tar
+*.tar.gz
+
+# Testcase files
+/Testcase
+
+# Backup files
+*.backup*
+lib/gemini.ts.backup*
+
+# Deployment packages
+text-to-html-deploy/
+text-to-html-deploy.zip
+text-to-html-v*.tar

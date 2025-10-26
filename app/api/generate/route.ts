@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateHTML } from '@/lib/gemini';
 import { Box } from '@/types';
 
+export const maxDuration = 300; // 5분 (Gemini API 복잡한 HTML 생성 대기)
+
 export async function POST(request: NextRequest) {
   try {
     const { boxes }: { boxes: Box[] } = await request.json();

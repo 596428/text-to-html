@@ -46,6 +46,7 @@ export interface AppState {
   removeBox: (id: string) => void;
   selectBox: (id: string | null) => void;
   clearBoxes: () => void;
+  setBoxes: (boxes: Box[]) => void;
 
   // 팝업 관련 액션
   setBoxPopup: (boxId: string, popupContent: string) => void;
