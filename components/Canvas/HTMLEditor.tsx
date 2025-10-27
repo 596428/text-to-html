@@ -186,7 +186,11 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       if (el.tagName === 'SCRIPT') return;
 
       el.setAttribute('data-editable', 'true');
-      el.setAttribute('data-section-id', `section-${index}`);
+
+      // 기존 data-section-id가 있으면 보존, 없으면 새로 생성
+      if (!el.hasAttribute('data-section-id')) {
+        el.setAttribute('data-section-id', `section-${index + 1}`);
+      }
 
       const currentPosition = win.getComputedStyle(el).position;
       if (currentPosition === 'static') {

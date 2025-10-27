@@ -80,7 +80,7 @@ export default function EditorToolbar() {
 
       const metadata = JSON.parse(metadataScript.textContent || '{}');
 
-      // Box 복원
+      // Box 복원 (모든 레이아웃 타입 지원)
       const restoredBoxes: Box[] = metadata.boxes.map((box: any) => ({
         id: box.id,
         x: box.position.x,
@@ -88,6 +88,27 @@ export default function EditorToolbar() {
         width: box.size.width,
         height: box.size.height,
         content: box.content,
+
+        // 레이아웃 타입
+        layoutType: box.layoutType || 'simple',
+
+        // Flex 레이아웃 관련
+        ...(box.layoutType === 'flex' && {
+          flexDirection: box.flexDirection,
+          flexWrap: box.flexWrap,
+          justifyContent: box.justifyContent,
+          alignItems: box.alignItems,
+          gap: box.gap,
+          children: box.children
+        }),
+
+        // 테이블 레이아웃 관련
+        ...(box.layoutType === 'table' && {
+          tableStructure: box.tableStructure,
+          tableDescription: box.tableDescription
+        }),
+
+        // 팝업 관련
         hasPopup: box.hasPopup,
         popupContent: box.popupContent,
         popupTriggerText: box.popupTriggerText

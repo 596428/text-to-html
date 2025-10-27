@@ -1,7 +1,7 @@
 // ============ 핵심 데이터 모델 ============
 
 // 레이아웃 타입
-export type LayoutType = 'simple' | 'flex' | 'table';
+export type LayoutType = 'simple' | 'flex' | 'table' | 'loaded';
 
 // 자식 요소 (Flex 레이아웃용)
 export interface ChildElement {
@@ -50,6 +50,11 @@ export interface Box {
 
   // 테이블 레이아웃 관련 (Phase 2 사용)
   tableStructure?: TableStructure;
+  tableDescription?: string;  // 테이블 추가 설명 (스타일, 동작 등)
+
+  // 불러오기 레이아웃 관련 (Phase 5 사용)
+  loadedComponentId?: string;  // 저장된 컴포넌트 ID
+  loadedHtml?: string;         // 불러온 HTML 코드
 
   // 팝업 관련 필드
   hasPopup?: boolean;           // 팝업 보유 여부
@@ -68,6 +73,19 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
+}
+
+// ============ 컴포넌트 라이브러리 (Phase 5) ============
+
+export interface SavedComponent {
+  id: string;              // 고유 ID
+  name: string;            // 사용자 지정 이름
+  description: string;     // 설명
+  html: string;            // 저장된 HTML 코드
+  width: number;           // 원래 박스 너비 (칸)
+  height: number;          // 원래 박스 높이 (px)
+  createdAt: string;       // 생성 날짜 (ISO string)
+  tags?: string[];         // 검색용 태그
 }
 
 // ============ 상태 관리 인터페이스 ============

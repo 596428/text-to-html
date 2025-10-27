@@ -1,6 +1,6 @@
 // ============ 그리드 시스템 상수 ============
 
-export const GRID_COLUMNS = 12;
+export const GRID_COLUMNS = 24; // 12에서 24로 확장
 export const GRID_UNIT = 100; // 1컬럼 = 100px
 export const GRID_SNAP_Y = 20; // Y축 스냅 간격
 

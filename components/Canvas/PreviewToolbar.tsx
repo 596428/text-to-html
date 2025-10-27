@@ -27,7 +27,7 @@ export default function PreviewToolbar() {
       return;
     }
 
-    // 메타데이터 생성
+    // 메타데이터 생성 (모든 박스 데이터 포함)
     const metadata = {
       version: '1.0',
       createdAt: new Date().toISOString(),
@@ -36,6 +36,30 @@ export default function PreviewToolbar() {
         position: { x: box.x, y: box.y },
         size: { width: box.width, height: box.height },
         content: box.content,
+
+        // 레이아웃 타입
+        layoutType: box.layoutType,
+
+        // Flex 레이아웃 관련
+        ...(box.layoutType === 'flex' && {
+          flexDirection: box.flexDirection,
+          flexWrap: box.flexWrap,
+          justifyContent: box.justifyContent,
+          alignItems: box.alignItems,
+          gap: box.gap,
+          children: box.children
+        }),
+
+        // 테이블 레이아웃 관련
+        ...(box.layoutType === 'table' && {
+          tableStructure: box.tableStructure,
+          tableDescription: box.tableDescription
+        }),
+
+        // 불러오기 레이아웃 관련 (제외 - 사용자 요청)
+        // loadedComponentId, loadedHtml은 저장하지 않음
+
+        // 팝업 관련
         hasPopup: box.hasPopup || false,
         popupContent: box.popupContent || '',
         popupTriggerText: box.popupTriggerText || ''
