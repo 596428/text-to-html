@@ -35,11 +35,17 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
 
   // 박스 클릭 기능 추가
   useEffect(() => {
-    if (!iframeRef.current || !enableBoxClick || boxes.length === 0) return;
+    if (!iframeRef.current || !enableBoxClick || boxes.length === 0 || !currentHTML) return;
 
     const iframe = iframeRef.current;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
+    if (!doc || !doc.body) return; // body가 로드될 때까지 대기
+
+    // 이미 오버레이가 있으면 제거 (중복 방지)
+    const existingOverlay = doc.getElementById('box-overlay-container');
+    if (existingOverlay) {
+      existingOverlay.remove();
+    }
 
     // 각 박스 위치에 클릭 가능한 오버레이 추가
     const overlayContainer = doc.createElement('div');
@@ -135,11 +141,11 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
 
     doc.body.appendChild(overlayContainer);
 
-    // 클린업
+    // 클린업 - 의존성 변경 시 오버레이 제거
     return () => {
-      const existingOverlay = doc.getElementById('box-overlay-container');
-      if (existingOverlay) {
-        existingOverlay.remove();
+      const overlay = doc.getElementById('box-overlay-container');
+      if (overlay) {
+        overlay.remove();
       }
     };
   }, [currentHTML, enableBoxClick, boxes, onBoxClick]);
