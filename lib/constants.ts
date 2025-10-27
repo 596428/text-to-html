@@ -7,7 +7,7 @@ export const GRID_SNAP_Y = 20; // Y축 스냅 간격
 // ============ 박스 기본값 ============
 
 export const DEFAULT_BOX_WIDTH = 6; // 12컬럼 중 6컬럼 (50%)
-export const DEFAULT_BOX_HEIGHT = 200;
+export const DEFAULT_BOX_HEIGHT = 400; // 박스 초기 높이 (2배로 증가)
 export const MIN_BOX_WIDTH = 1; // 최소 1컬럼
 export const MIN_BOX_HEIGHT = 50;
 

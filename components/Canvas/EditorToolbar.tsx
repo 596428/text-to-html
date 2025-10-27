@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { ERROR_MESSAGES } from '@/lib/constants';
 import { Box } from '@/types';
@@ -18,6 +18,7 @@ export default function EditorToolbar() {
   const setError = useStore((state) => state.setError);
   const htmlVersions = useStore((state) => state.htmlVersions);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const hasGeneratedHTML = htmlVersions.length > 0;
 
@@ -26,6 +27,10 @@ export default function EditorToolbar() {
       setError(ERROR_MESSAGES.NO_BOXES);
       return;
     }
+
+    // 새로운 AbortController 생성
+    const controller = new AbortController();
+    setAbortController(controller);
 
     setGenerating(true);
     setError(null);
@@ -36,7 +41,8 @@ export default function EditorToolbar() {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boxes })
+        body: JSON.stringify({ boxes }),
+        signal: controller.signal // AbortController 시그널 추가
       });
 
       const data = await response.json();
@@ -52,11 +58,24 @@ export default function EditorToolbar() {
         addVersion(data.html, prompt);
         setCanvasMode('preview'); // 자동으로 프리뷰 모드로 전환
       }
-    } catch (error) {
-      console.error('Generate error:', error);
-      setError('HTML 생성 중 오류가 발생했습니다.');
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('⚠️ HTML 생성이 취소되었습니다.');
+        setError('HTML 생성이 취소되었습니다.');
+      } else {
+        console.error('Generate error:', error);
+        setError('HTML 생성 중 오류가 발생했습니다.');
+      }
     } finally {
       setGenerating(false);
+      setAbortController(null);
+    }
+  };
+
+  const handleCancelGenerate = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
     }
   };
 
@@ -163,6 +182,16 @@ export default function EditorToolbar() {
             'HTML 생성'
           )}
         </button>
+
+        {isGenerating && (
+          <button
+            onClick={handleCancelGenerate}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold
+                       py-2 px-4 rounded-md shadow-sm transition-all"
+          >
+            ✕ 취소
+          </button>
+        )}
 
         {hasGeneratedHTML && (
           <button
