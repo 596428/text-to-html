@@ -7,13 +7,49 @@ const STORAGE_KEY = 'text-to-html-saved-components';
 
 /**
  * 모든 저장된 컴포넌트 가져오기
+ * (자동 마이그레이션: metadata가 없는 구버전 컴포넌트에 metadata 추가)
  */
 export function getAllComponents(): SavedComponent[] {
   if (typeof window === 'undefined') return [];
 
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+
+    const components: SavedComponent[] = JSON.parse(data);
+    let needsUpdate = false;
+
+    // 구버전 컴포넌트에 metadata 자동 추가 (마이그레이션)
+    const migratedComponents = components.map(comp => {
+      if (!comp.metadata) {
+        needsUpdate = true;
+
+        // 메타데이터 계산
+        const totalSections = (comp.html.match(/data-section-id=/g) || []).length;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(comp.html, 'text/html');
+        const topLevelSections = doc.querySelectorAll('body > div[data-section-id], body > * > div[data-section-id]:not([data-section-id] [data-section-id])');
+        const boxCount = topLevelSections.length;
+
+        return {
+          ...comp,
+          metadata: {
+            boxCount,
+            totalSections,
+            version: '1.0',
+          },
+        };
+      }
+      return comp;
+    });
+
+    // 마이그레이션이 발생했으면 localStorage 업데이트
+    if (needsUpdate) {
+      console.log('📦 컴포넌트 마이그레이션 완료: metadata 추가');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedComponents));
+    }
+
+    return migratedComponents;
   } catch (error) {
     console.error('컴포넌트 불러오기 오류:', error);
     return [];
@@ -23,13 +59,28 @@ export function getAllComponents(): SavedComponent[] {
 /**
  * 컴포넌트 저장
  */
-export function saveComponent(component: Omit<SavedComponent, 'id' | 'createdAt'>): SavedComponent {
+export function saveComponent(component: Omit<SavedComponent, 'id' | 'createdAt' | 'metadata'>): SavedComponent {
   const existing = getAllComponents();
+
+  // 메타데이터 계산 (DB 마이그레이션 대비)
+  const totalSections = (component.html.match(/data-section-id=/g) || []).length;
+
+  // 최상위 박스 개수 계산: <div class="..." data-editable="true" data-section-id="..."> 패턴 찾기
+  // 부모 요소만 카운트 (자식 요소 제외)
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(component.html, 'text/html');
+  const topLevelSections = doc.querySelectorAll('body > div[data-section-id], body > * > div[data-section-id]:not([data-section-id] [data-section-id])');
+  const boxCount = topLevelSections.length;
 
   const newComponent: SavedComponent = {
     ...component,
     id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     createdAt: new Date().toISOString(),
+    metadata: {
+      boxCount,           // 최상위 박스 개수
+      totalSections,      // 모든 data-section-id 개수
+      version: '1.0',
+    },
   };
 
   existing.push(newComponent);

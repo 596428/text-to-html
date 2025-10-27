@@ -87,6 +87,11 @@ export interface SavedComponent {
   height: number;          // 원래 박스 높이 (px)
   createdAt: string;       // 생성 날짜 (ISO string)
   tags?: string[];         // 검색용 태그
+  metadata?: {             // 메타데이터 (DB 마이그레이션 대비)
+    boxCount: number;      // 최상위 박스 개수 (1개면 단일 컴포넌트, 2개 이상이면 전체 페이지)
+    totalSections: number; // 모든 data-section-id 개수 (부모+자식)
+    version?: string;      // 저장 버전
+  };
 }
 
 // ============ 상태 관리 인터페이스 ============

@@ -133,11 +133,15 @@ export default function ComponentLibrary({ onSelect, onClose }: ComponentLibrary
 
                   {/* 잘못 저장된 컴포넌트 경고 */}
                   {(() => {
-                    // data-section-id 개수로 판단 (2개 이상이면 전체 페이지)
-                    const sectionIdCount = (comp.html.match(/data-section-id=/g) || []).length;
-                    return sectionIdCount > 1 && (
+                    // 메타데이터의 boxCount로 판단 (2개 이상이면 전체 페이지)
+                    // 메타데이터가 없는 경우(구버전) fallback: data-section-id 개수로 판단
+                    const boxCount = comp.metadata?.boxCount;
+                    const fallbackCount = (comp.html.match(/data-section-id=/g) || []).length;
+                    const actualCount = boxCount !== undefined ? boxCount : fallbackCount;
+
+                    return actualCount > 1 && (
                       <p className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded mb-2">
-                        ⚠️ 전체 페이지 저장됨 ({sectionIdCount}개 박스)
+                        ⚠️ 전체 페이지 저장됨 ({actualCount}개 박스)
                       </p>
                     );
                   })()}
