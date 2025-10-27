@@ -5,11 +5,12 @@ import { SavedComponent } from '@/types';
 // GET: 특정 컴포넌트 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const collection = await getComponentsCollection();
-    const component = await collection.findOne({ id: params.id });
+    const component = await collection.findOne({ id });
 
     if (!component) {
       return NextResponse.json(
@@ -23,7 +24,8 @@ export async function GET(
 
     return NextResponse.json({ component: cleanedComponent });
   } catch (error) {
-    console.error(`[/api/components/${params.id}] GET Error:`, error);
+    const { id } = await params;
+    console.error(`[/api/components/${id}] GET Error:`, error);
     return NextResponse.json(
       { error: 'Failed to fetch component' },
       { status: 500 }
@@ -34,14 +36,15 @@ export async function GET(
 // PUT: 특정 컴포넌트 업데이트
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const updates: Partial<SavedComponent> = await request.json();
 
     const collection = await getComponentsCollection();
     const result = await collection.updateOne(
-      { id: params.id },
+      { id },
       { $set: updates }
     );
 
@@ -54,7 +57,8 @@ export async function PUT(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`[/api/components/${params.id}] PUT Error:`, error);
+    const { id } = await params;
+    console.error(`[/api/components/${id}] PUT Error:`, error);
     return NextResponse.json(
       { error: 'Failed to update component' },
       { status: 500 }
@@ -65,11 +69,12 @@ export async function PUT(
 // DELETE: 특정 컴포넌트 삭제
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const collection = await getComponentsCollection();
-    const result = await collection.deleteOne({ id: params.id });
+    const result = await collection.deleteOne({ id });
 
     if (result.deletedCount === 0) {
       return NextResponse.json(
@@ -80,7 +85,8 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(`[/api/components/${params.id}] DELETE Error:`, error);
+    const { id } = await params;
+    console.error(`[/api/components/${id}] DELETE Error:`, error);
     return NextResponse.json(
       { error: 'Failed to delete component' },
       { status: 500 }
