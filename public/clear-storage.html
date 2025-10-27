@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storage 초기화</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    .btn-danger {
+      background: #f44336;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #d32f2f;
+    }
+    .btn-warning {
+      background: #ff9800;
+      color: white;
+    }
+    .btn-warning:hover {
+      background: #f57c00;
+    }
+    .btn-primary {
+      background: #2196F3;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #0b7dda;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .success { background: #c8e6c9; color: #2e7d32; }
+    .info { background: #e3f2fd; color: #1565c0; }
+    .warning { background: #fff3e0; color: #e65100; }
+    pre {
+      background: #f4f4f4;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🗑️ localStorage 초기화 도구</h1>
+    
+    <div style="margin: 30px 0;">
+      <h2>1단계: 현재 데이터 확인</h2>
+      <button class="btn-primary" onclick="checkStorage()">📊 데이터 확인</button>
+      <div id="check-result"></div>
+    </div>
+
+    <div style="margin: 30px 0;">
+      <h2>2단계: 중복 버전 수정</h2>
+      <p style="color: #666;">중복된 버전 번호를 자동으로 수정합니다 (권장)</p>
+      <button class="btn-warning" onclick="fixDuplicateVersions()">🔧 중복 버전 수정</button>
+      <div id="fix-result"></div>
+    </div>
+
+    <div style="margin: 30px 0; border-top: 2px solid #ddd; padding-top: 20px;">
+      <h2>3단계: 완전 초기화 (주의!)</h2>
+      <p style="color: #d32f2f; font-weight: bold;">⚠️ 모든 HTML 버전 히스토리가 삭제됩니다!</p>
+      <p style="color: #666;">컴포넌트 저장본은 MongoDB에 있으므로 안전합니다.</p>
+      <button class="btn-danger" onclick="clearVersions()">🗑️ 버전 히스토리 초기화</button>
+      <div id="clear-result"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'text-to-html-storage';
+
+    function checkStorage() {
+      const result = document.getElementById('check-result');
+      const data = localStorage.getItem(STORAGE_KEY);
+
+      if (!data) {
+        result.innerHTML = '<div class="result warning">⚠️ 저장된 데이터가 없습니다.</div>';
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(data);
+        const versions = parsed.state?.htmlVersions || [];
+
+        // 버전 번호 중복 체크
+        const versionNumbers = versions.map(v => v.version);
+        const duplicates = versionNumbers.filter((v, i, arr) => arr.indexOf(v) !== i);
+        const uniqueDuplicates = [...new Set(duplicates)];
+
+        result.innerHTML = `
+          <div class="result info">
+            <p>✅ 저장된 HTML 버전: ${versions.length}개</p>
+            <p>현재 버전: v${parsed.state?.currentVersion || 'N/A'}</p>
+            ${uniqueDuplicates.length > 0 
+              ? `<p style="color: #d32f2f;">⚠️ 중복된 버전: ${uniqueDuplicates.join(', ')}</p>` 
+              : '<p>✅ 중복 없음</p>'}
+          </div>
+          <pre>${JSON.stringify({
+            versions: versionNumbers,
+            currentVersion: parsed.state?.currentVersion
+          }, null, 2)}</pre>
+        `;
+      } catch (error) {
+        result.innerHTML = `<div class="result warning">❌ 파싱 오류: ${error.message}</div>`;
+      }
+    }
+
+    function fixDuplicateVersions() {
+      const result = document.getElementById('fix-result');
+      const data = localStorage.getItem(STORAGE_KEY);
+
+      if (!data) {
+        result.innerHTML = '<div class="result warning">⚠️ 저장된 데이터가 없습니다.</div>';
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(data);
+        const versions = parsed.state?.htmlVersions || [];
+
+        // 버전 번호를 순차적으로 재할당 (1부터 시작)
+        const fixedVersions = versions.map((v, i) => ({
+          ...v,
+          version: i + 1
+        }));
+
+        // 최신 버전으로 currentVersion 설정
+        const newCurrentVersion = fixedVersions.length;
+
+        parsed.state.htmlVersions = fixedVersions;
+        parsed.state.currentVersion = newCurrentVersion;
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+
+        result.innerHTML = `
+          <div class="result success">
+            ✅ 수정 완료!<br>
+            총 ${fixedVersions.length}개 버전을 v1 ~ v${fixedVersions.length}로 재설정했습니다.<br>
+            현재 버전: v${newCurrentVersion}<br><br>
+            <strong>페이지를 새로고침하세요!</strong>
+          </div>
+        `;
+      } catch (error) {
+        result.innerHTML = `<div class="result warning">❌ 수정 실패: ${error.message}</div>`;
+      }
+    }
+
+    function clearVersions() {
+      if (!confirm('⚠️ 정말로 모든 HTML 버전 히스토리를 삭제하시겠습니까?\n\n(컴포넌트 저장본은 MongoDB에 안전하게 보관됩니다)')) {
+        return;
+      }
+
+      const result = document.getElementById('clear-result');
+      const data = localStorage.getItem(STORAGE_KEY);
+
+      if (!data) {
+        result.innerHTML = '<div class="result warning">⚠️ 저장된 데이터가 없습니다.</div>';
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(data);
+        const versionCount = parsed.state?.htmlVersions?.length || 0;
+
+        // HTML 버전만 초기화 (boxes는 유지)
+        parsed.state.htmlVersions = [];
+        parsed.state.currentVersion = 0;
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+
+        result.innerHTML = `
+          <div class="result success">
+            ✅ 초기화 완료!<br>
+            ${versionCount}개의 HTML 버전이 삭제되었습니다.<br><br>
+            <strong>페이지를 새로고침하세요!</strong>
+          </div>
+        `;
+      } catch (error) {
+        result.innerHTML = `<div class="result warning">❌ 초기화 실패: ${error.message}</div>`;
+      }
+    }
+
+    // 페이지 로드 시 자동 확인
+    window.onload = () => {
+      checkStorage();
+    };
+  </script>
+</body>
+</html>

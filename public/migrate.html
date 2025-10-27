@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>localStorage → MongoDB 마이그레이션</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #45a049;
+    }
+    .btn-secondary {
+      background: #2196F3;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #0b7dda;
+    }
+    .success { color: #4CAF50; font-weight: bold; }
+    .error { color: #f44336; font-weight: bold; }
+    .warning { color: #ff9800; font-weight: bold; }
+    pre {
+      background: #f4f4f4;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      border-left: 4px solid #4CAF50;
+    }
+    .log {
+      background: #000;
+      color: #0f0;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 20px 0;
+    }
+    .component-item {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+    .step {
+      margin: 30px 0;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .step h2 {
+      color: #2196F3;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 localStorage → MongoDB 마이그레이션 도구</h1>
+
+    <div class="step">
+      <h2>1단계: localStorage 데이터 확인</h2>
+      <button class="btn-secondary" onclick="checkLocalStorage()">📦 localStorage 확인</button>
+      <div id="local-result"></div>
+    </div>
+
+    <div class="step">
+      <h2>2단계: 마이그레이션 실행</h2>
+      <button class="btn-primary" onclick="migrateToMongoDB()">🚀 MongoDB로 마이그레이션</button>
+      <div id="migrate-log" class="log" style="display:none;"></div>
+    </div>
+
+    <div class="step">
+      <h2>3단계: MongoDB 확인</h2>
+      <button class="btn-secondary" onclick="checkMongoDB()">🗄️ MongoDB 데이터 확인</button>
+      <div id="mongo-result"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'text-to-html-saved-components';
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('migrate-log');
+      logDiv.style.display = 'block';
+      const time = new Date().toLocaleTimeString('ko-KR');
+      const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+      logDiv.innerHTML += `[${time}] ${prefix} ${message}\n`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function checkLocalStorage() {
+      const result = document.getElementById('local-result');
+      const data = localStorage.getItem(STORAGE_KEY);
+
+      if (!data) {
+        result.innerHTML = '<p class="error">❌ localStorage에 저장된 컴포넌트가 없습니다.</p>';
+        return;
+      }
+
+      try {
+        const components = JSON.parse(data);
+        result.innerHTML = `
+          <p class="success">✅ localStorage에 ${components.length}개 컴포넌트 발견</p>
+          <div>
+            ${components.map((comp, i) => `
+              <div class="component-item">
+                <strong>${i + 1}. ${comp.name || '(이름 없음)'}</strong><br>
+                <small>ID: ${comp.id}</small><br>
+                크기: ${comp.width}칸 × ${comp.height}px<br>
+                HTML: ${(comp.html.length / 1024).toFixed(2)} KB<br>
+                메타데이터: ${comp.metadata ? '✅ 있음' : '❌ 없음 (자동 생성 예정)'}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } catch (error) {
+        result.innerHTML = `<p class="error">❌ 파싱 오류: ${error.message}</p>`;
+      }
+    }
+
+    async function migrateToMongoDB() {
+      const logDiv = document.getElementById('migrate-log');
+      logDiv.innerHTML = '';
+      logDiv.style.display = 'block';
+
+      const data = localStorage.getItem(STORAGE_KEY);
+
+      if (!data) {
+        log('localStorage에 데이터가 없습니다.', 'error');
+        return;
+      }
+
+      try {
+        const components = JSON.parse(data);
+        log(`총 ${components.length}개 컴포넌트 마이그레이션 시작...`);
+        log('━'.repeat(60));
+
+        let successCount = 0;
+        let skipCount = 0;
+        const errors = [];
+
+        for (let i = 0; i < components.length; i++) {
+          const comp = components[i];
+          log(`[${i + 1}/${components.length}] ${comp.name} 처리 중...`);
+
+          try {
+            // metadata가 없으면 자동 생성
+            let migratedComp = comp;
+            if (!comp.metadata) {
+              const totalSections = (comp.html.match(/data-section-id=/g) || []).length;
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(comp.html, 'text/html');
+              const topLevelSections = doc.querySelectorAll(
+                'body > div[data-section-id], body > * > div[data-section-id]:not([data-section-id] [data-section-id])'
+              );
+              const boxCount = topLevelSections.length;
+
+              migratedComp = {
+                ...comp,
+                metadata: {
+                  boxCount,
+                  totalSections,
+                  version: '1.0',
+                },
+              };
+              log(`  └─ metadata 생성: boxCount=${boxCount}, totalSections=${totalSections}`, 'info');
+            }
+
+            // MongoDB에 저장
+            const response = await fetch('http://localhost:3000/api/components', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(migratedComp),
+            });
+
+            if (response.ok) {
+              successCount++;
+              log(`  └─ ✅ 저장 성공!`, 'success');
+            } else if (response.status === 409) {
+              skipCount++;
+              log(`  └─ ⏭️ 이미 존재 (스킵)`, 'warning');
+            } else {
+              const errorText = await response.text();
+              throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+          } catch (error) {
+            errors.push(`${comp.id}: ${error.message}`);
+            log(`  └─ ❌ 오류: ${error.message}`, 'error');
+          }
+        }
+
+        log('━'.repeat(60));
+        log(`마이그레이션 완료!`, 'success');
+        log(`✅ 성공: ${successCount}개`, 'success');
+        log(`⏭️ 스킵: ${skipCount}개`, 'warning');
+        if (errors.length > 0) {
+          log(`❌ 오류: ${errors.length}개`, 'error');
+          errors.forEach(err => log(`  - ${err}`, 'error'));
+        }
+
+      } catch (error) {
+        log(`마이그레이션 실패: ${error.message}`, 'error');
+      }
+    }
+
+    async function checkMongoDB() {
+      const result = document.getElementById('mongo-result');
+      result.innerHTML = '<p>⏳ MongoDB 조회 중...</p>';
+
+      try {
+        const response = await fetch('http://localhost:3000/api/components');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const components = data.components || [];
+
+        result.innerHTML = `
+          <p class="success">✅ MongoDB에 ${components.length}개 컴포넌트 저장됨</p>
+          <div>
+            ${components.map((comp, i) => `
+              <div class="component-item">
+                <strong>${i + 1}. ${comp.name}</strong><br>
+                <small>ID: ${comp.id}</small><br>
+                크기: ${comp.width}칸 × ${comp.height}px<br>
+                생성일: ${new Date(comp.createdAt).toLocaleString('ko-KR')}<br>
+                메타데이터: boxCount=${comp.metadata?.boxCount}, totalSections=${comp.metadata?.totalSections}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } catch (error) {
+        result.innerHTML = `<p class="error">❌ MongoDB 조회 실패: ${error.message}</p>`;
+      }
+    }
+
+    // 페이지 로드 시 자동 확인
+    window.onload = () => {
+      checkLocalStorage();
+    };
+  </script>
+</body>
+</html>

@@ -19,8 +19,8 @@ export default function ComponentLibrary({ onSelect, onClose }: ComponentLibrary
     loadComponents();
   }, []);
 
-  const loadComponents = () => {
-    const all = getAllComponents();
+  const loadComponents = async () => {
+    const all = await getAllComponents();
     setComponents(all);
   };
 
@@ -30,10 +30,10 @@ export default function ComponentLibrary({ onSelect, onClose }: ComponentLibrary
     (c.tags && c.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (confirm(`"${name}" 컴포넌트를 삭제하시겠습니까?`)) {
-      deleteComponent(id);
-      loadComponents();
+      await deleteComponent(id);
+      await loadComponents();
     }
   };
 

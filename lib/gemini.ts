@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { JSDOM } from 'jsdom';
 import { Box } from '@/types';
 import { logHTMLGeneration, logHTMLModification } from '@/lib/logger';
 
@@ -332,17 +333,103 @@ function integratePopupContent(html: string, boxes: Box[]): string {
 /**
  * 모든 박스가 불러오기인 경우: 단순 결합
  */
+/**
+ * 저장된 HTML에서 특정 section만 추출하는 헬퍼 함수
+ * (전체 페이지가 저장된 경우 첫 번째 section만 가져옴)
+ */
+function extractSectionFromLoadedHtml(loadedHtml: string): string {
+  if (!loadedHtml) return '';
+
+  // body 내용 추출
+  const bodyMatch = loadedHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  const bodyContent = bodyMatch ? bodyMatch[1] : loadedHtml;
+
+  // data-section-id를 가진 div의 시작 위치 찾기
+  const sectionStartRegex = /<div[^>]*data-section-id="[^"]*"[^>]*>/gi;
+  const matches = [...bodyContent.matchAll(sectionStartRegex)];
+
+  if (matches.length === 0) {
+    // section이 없으면 전체 body 내용 반환
+    return bodyContent;
+  }
+
+  // 첫 번째 section의 시작 위치
+  const firstMatch = matches[0];
+  const startIndex = firstMatch.index!;
+  const startTag = firstMatch[0];
+
+  // 시작 위치부터 div의 깊이를 추적하여 닫는 태그 찾기
+  let depth = 1;
+  let currentIndex = startIndex + startTag.length;
+  const content = bodyContent.substring(startIndex);
+
+  for (let i = startTag.length; i < content.length; i++) {
+    if (content.substring(i).startsWith('<div')) {
+      // div 열림 찾기
+      const nextClose = content.indexOf('>', i);
+      if (nextClose > i && content.substring(i, nextClose + 1).indexOf('/>') === -1) {
+        depth++;
+        i = nextClose;
+      }
+    } else if (content.substring(i).startsWith('</div>')) {
+      depth--;
+      if (depth === 0) {
+        // 매칭되는 닫는 태그 발견
+        const endIndex = i + 6; // '</div>'.length
+        const extractedSection = content.substring(0, endIndex);
+
+        if (matches.length > 1) {
+          console.log(`[Info] 저장된 HTML에서 ${matches.length}개 section 발견, 첫 번째만 사용`);
+        }
+
+        return extractedSection;
+      }
+      i += 5; // '</div>'.length - 1
+    }
+  }
+
+  // 매칭 실패 시 전체 body 내용 반환
+  console.warn('[Warning] section 닫는 태그를 찾지 못했습니다. 전체 body 반환');
+  return bodyContent;
+}
+
 function mergeLoadedHtmls(loadedBoxes: Box[], allBoxes: Box[]): string {
+  // Case 1: 박스가 1개면 컨테이너 방식 (전체 너비 사용)
+  if (loadedBoxes.length === 1) {
+    const box = loadedBoxes[0];
+    const content = extractSectionFromLoadedHtml(box.loadedHtml || '');
+
+    return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generated Layout</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 20px; font-family: sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-700">
+  <div class="container mx-auto max-w-screen-2xl space-y-4 p-4">
+${content}
+  </div>
+</body>
+</html>`;
+  }
+
+  // Case 2: 박스가 2개 이상이면 24컬럼 그리드 배치
   const bodyContent = loadedBoxes
     .map((box) => {
-      const styles = `
-        position: absolute;
-        left: ${(box.x / 24) * 100}%;
-        top: ${box.y}px;
-        width: ${(box.width / 24) * 100}%;
-        min-height: ${box.height}px;
-      `;
-      return `<div style="${styles}">${box.loadedHtml}</div>`;
+      const content = extractSectionFromLoadedHtml(box.loadedHtml || '');
+
+      // 24컬럼 그리드 기준으로 배치
+      const colSpan = Math.round((box.width / 24) * 24); // width는 1-24 범위
+      const rowStart = Math.floor(box.y / 100) + 1; // y를 row로 변환
+
+      return `<div class="col-span-${colSpan}" style="grid-row-start: ${rowStart};">
+${content}
+</div>`;
     })
     .join('\n');
 
@@ -352,12 +439,17 @@ function mergeLoadedHtmls(loadedBoxes: Box[], allBoxes: Box[]): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Generated Layout</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 20px; font-family: sans-serif; position: relative; min-height: 100vh; }
+    body { margin: 0; padding: 20px; font-family: sans-serif; }
   </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-700">
+  <div class="container mx-auto max-w-screen-2xl p-4">
+    <div class="grid grid-cols-24 gap-4 auto-rows-min">
 ${bodyContent}
+    </div>
+  </div>
 </body>
 </html>`;
 }
@@ -366,19 +458,13 @@ ${bodyContent}
  * 불러온 HTML과 생성된 HTML 혼합 (간단 구현)
  */
 function mergeHtmlWithLoaded(generatedHtml: string, loadedBoxes: Box[], allBoxes: Box[]): string {
-  // 불러온 HTML에서 body 내용만 추출하여 병합
+  // 불러온 HTML에서 첫 번째 section만 추출하여 병합
   const loadedContent = loadedBoxes
     .map((box) => {
       if (!box.loadedHtml) return '';
 
-      // loadedHtml에서 <body> 태그 내용만 추출
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(box.loadedHtml, 'text/html');
-      const bodyContent = doc.body.innerHTML;
-
-      // 추출한 내용을 그대로 반환 (position: absolute 제거)
-      // data-section-id가 있으면 그대로 사용됨
-      return bodyContent;
+      // 헬퍼 함수 사용: 저장된 HTML에서 첫 번째 section만 추출
+      return extractSectionFromLoadedHtml(box.loadedHtml);
     })
     .filter(content => content.length > 0)
     .join('\n');

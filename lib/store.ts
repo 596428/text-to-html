@@ -87,14 +87,24 @@ export const useStore = create<AppState>()(
 
         // ========== HTML 버전 관리 ==========
         addVersion: (html, prompt) => set((state) => {
+          // 마지막 버전 번호 기준으로 증가 (30개 제한 시에도 연속성 유지)
+          const lastVersion = state.htmlVersions.length > 0
+            ? Math.max(...state.htmlVersions.map(v => v.version))
+            : 0;
+
           const newVersion: HTMLVersion = {
-            version: state.htmlVersions.length + 1,
+            version: lastVersion + 1,
             html,
             prompt,
             timestamp: new Date()
           };
+          const updatedVersions = [...state.htmlVersions, newVersion];
+
+          // 최근 30개 버전만 유지 (메모리 누적 방지)
+          const limitedVersions = updatedVersions.slice(-30);
+
           return {
-            htmlVersions: [...state.htmlVersions, newVersion],
+            htmlVersions: limitedVersions,
             currentVersion: newVersion.version
           };
         }),
@@ -124,6 +134,21 @@ export const useStore = create<AppState>()(
         // 스토리지에서 읽어올 때 마이그레이션 적용
         migrate: (persistedState: any, version: number) => {
           const migrated = migrateState(persistedState);
+
+          // 30개 초과 버전 정리 (기존 사용자 대응)
+          if (migrated.htmlVersions && migrated.htmlVersions.length > 30) {
+            console.log(`[Migration] ${migrated.htmlVersions.length}개 버전 발견, 최근 30개로 정리`);
+            const limitedVersions = migrated.htmlVersions.slice(-30);
+            const maxVersion = Math.max(...limitedVersions.map((v: any) => v.version));
+
+            return {
+              ...persistedState,
+              ...migrated,
+              htmlVersions: limitedVersions,
+              currentVersion: maxVersion // 가장 최신 버전으로 설정
+            };
+          }
+
           return { ...persistedState, ...migrated };
         }
       }

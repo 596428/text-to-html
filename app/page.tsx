@@ -47,7 +47,6 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-3 px-6">
         <div className="flex flex-col items-center justify-center text-sm gap-1">
-          <div>010-2359-9650</div>
           <div>ttyr6590@familidata.co.kr</div>
         </div>
       </footer>

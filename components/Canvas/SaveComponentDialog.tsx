@@ -23,7 +23,7 @@ export default function SaveComponentDialog({
   const [tags, setTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       alert('컴포넌트 이름을 입력해주세요');
       return;
@@ -32,7 +32,7 @@ export default function SaveComponentDialog({
     setIsSaving(true);
 
     try {
-      saveComponent({
+      await saveComponent({
         name: name.trim(),
         description: description.trim(),
         html,

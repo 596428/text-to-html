@@ -47,6 +47,15 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
       existingOverlay.remove();
     }
 
+    // 이벤트 핸들러 추적용 Map (메모리 누적 방지)
+    const eventHandlers = new Map<HTMLElement, {
+      overlayMouseEnter: () => void;
+      overlayMouseLeave: () => void;
+      overlayClick: () => void;
+      tooltipMouseEnter: () => void;
+      tooltipMouseLeave: () => void;
+    }>();
+
     // 각 박스 위치에 클릭 가능한 오버레이 추가
     const overlayContainer = doc.createElement('div');
     overlayContainer.id = 'box-overlay-container';
@@ -90,24 +99,6 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
         background-color: transparent;
       `;
 
-      // 호버 효과
-      overlay.addEventListener('mouseenter', () => {
-        overlay.style.border = '2px dashed #3b82f6';
-        overlay.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-        setHoveredBoxId(box.id);
-      });
-
-      overlay.addEventListener('mouseleave', () => {
-        overlay.style.border = '2px dashed transparent';
-        overlay.style.backgroundColor = 'transparent';
-        setHoveredBoxId(null);
-      });
-
-      // 클릭 이벤트
-      overlay.addEventListener('click', () => {
-        onBoxClick?.(box);
-      });
-
       // 툴팁 추가
       const tooltip = doc.createElement('div');
       tooltip.style.cssText = `
@@ -127,12 +118,45 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
       `;
       tooltip.textContent = `${box.layoutType === 'loaded' ? '📚' : '📦'} 박스 ${box.id.slice(-4)} (${box.width}칸 × ${box.height}px)`;
 
-      overlay.addEventListener('mouseenter', () => {
-        tooltip.style.opacity = '1';
-      });
+      // 이벤트 핸들러를 변수로 저장 (나중에 제거하기 위해)
+      const overlayMouseEnter = () => {
+        overlay.style.border = '2px dashed #3b82f6';
+        overlay.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+        setHoveredBoxId(box.id);
+      };
 
-      overlay.addEventListener('mouseleave', () => {
+      const overlayMouseLeave = () => {
+        overlay.style.border = '2px dashed transparent';
+        overlay.style.backgroundColor = 'transparent';
+        setHoveredBoxId(null);
+      };
+
+      const overlayClick = () => {
+        onBoxClick?.(box);
+      };
+
+      const tooltipMouseEnter = () => {
+        tooltip.style.opacity = '1';
+      };
+
+      const tooltipMouseLeave = () => {
         tooltip.style.opacity = '0';
+      };
+
+      // 이벤트 리스너 등록
+      overlay.addEventListener('mouseenter', overlayMouseEnter);
+      overlay.addEventListener('mouseleave', overlayMouseLeave);
+      overlay.addEventListener('click', overlayClick);
+      overlay.addEventListener('mouseenter', tooltipMouseEnter);
+      overlay.addEventListener('mouseleave', tooltipMouseLeave);
+
+      // 나중에 제거하기 위해 핸들러 저장
+      eventHandlers.set(overlay, {
+        overlayMouseEnter,
+        overlayMouseLeave,
+        overlayClick,
+        tooltipMouseEnter,
+        tooltipMouseLeave
       });
 
       overlay.appendChild(tooltip);
@@ -141,8 +165,19 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
 
     doc.body.appendChild(overlayContainer);
 
-    // 클린업 - 의존성 변경 시 오버레이 제거
+    // 클린업 - 이벤트 리스너 명시적 제거 (메모리 누적 방지)
     return () => {
+      // 모든 이벤트 리스너 제거
+      eventHandlers.forEach((handlers, element) => {
+        element.removeEventListener('mouseenter', handlers.overlayMouseEnter);
+        element.removeEventListener('mouseleave', handlers.overlayMouseLeave);
+        element.removeEventListener('click', handlers.overlayClick);
+        element.removeEventListener('mouseenter', handlers.tooltipMouseEnter);
+        element.removeEventListener('mouseleave', handlers.tooltipMouseLeave);
+      });
+      eventHandlers.clear();
+
+      // DOM 제거
       const overlay = doc.getElementById('box-overlay-container');
       if (overlay) {
         overlay.remove();
