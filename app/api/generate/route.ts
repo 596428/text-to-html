@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { JSDOM } from 'jsdom';
 import { generateHTML } from '@/lib/gemini';
 import { Box } from '@/types';
 
@@ -17,9 +18,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Gemini API로 HTML 생성
-    const html = await generateHTML(boxes);
+    const generatedHTML = await generateHTML(boxes);
 
-    return NextResponse.json({ html });
+    // DOM 파싱하여 data-section-id에 UUID 삽입
+    const dom = new JSDOM(generatedHTML);
+    const doc = dom.window.document;
+
+    // data-editable="true" 요소들을 찾아서 UUID 부여
+    const editableElements = doc.querySelectorAll('[data-editable="true"]');
+    editableElements.forEach((el, index) => {
+      const box = boxes[index];
+      if (box) {
+        el.setAttribute('data-section-id', box.sectionId);
+      }
+    });
+
+    // 최종 HTML 생성
+    const finalHTML = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+
+    return NextResponse.json({ html: finalHTML });
   } catch (error) {
     console.error('[/api/generate] Error:', error);
 
