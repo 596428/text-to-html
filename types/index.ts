@@ -31,6 +31,7 @@ export interface TableCell {
 
 export interface Box {
   id: string;
+  sectionId: string;  // HTML의 data-section-id (UUID)
   x: number;          // 그리드 열 위치 (0-11)
   y: number;          // Y 좌표 (px)
   width: number;      // 그리드 컬럼 수 (1-12)

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { AppState, Box, ChatMessage, HTMLVersion } from '@/types';
 import { DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT } from '@/lib/constants';
+import { generateSectionId } from '@/lib/uuid';
 
 // ========== 마이그레이션 함수 ==========
 // 기존 Box 데이터를 새 스키마로 변환
@@ -9,6 +10,7 @@ function migrateBox(box: Partial<Box>): Box {
   return {
     ...box,
     id: box.id!,
+    sectionId: box.sectionId ?? generateSectionId(), // UUID 없으면 생성
     x: box.x ?? 0,
     y: box.y ?? 0,
     width: box.width ?? DEFAULT_BOX_WIDTH,
@@ -48,6 +50,7 @@ export const useStore = create<AppState>()(
         addBox: () => set((state) => {
           const newBox: Box = {
             id: `box-${Date.now()}`,
+            sectionId: generateSectionId(), // UUID 생성
             x: 0,
             y: state.boxes.length * 250,
             width: DEFAULT_BOX_WIDTH,

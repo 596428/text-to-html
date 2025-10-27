@@ -135,7 +135,8 @@ ${box.popupContent || '팝업 기본 내용'}`;
 7. 더미 텍스트는 **한국어**로
 8. 각 영역을 명확히 구분 (border/background로 시각화)
 9. 실제 사용 가능한 수준의 퀄리티
-10. **중요**: 각 주요 섹션/컴포넌트에 data-editable="true" 속성과 고유한 data-section-id="section-N" 속성을 추가하세요 (나중에 드래그/리사이즈 편집을 위해 필요)
+10. **중요**: 각 주요 섹션/컴포넌트에 data-editable="true" 속성과 고유한 data-section-id 속성을 추가하세요 (나중에 드래그/리사이즈 편집을 위해 필요)
+    - 각 박스의 sectionId를 사용하세요: ${boxes.map((b, i) => `박스${i+1}="${b.sectionId}"`).join(', ')}
 11. **테이블/그리드 중요 (매우 엄격)**:
     - 사용자가 "1행"이라고 명시한 경우, **절대로 여러 행으로 나누지 마세요**.
     - **flex-col, space-y, grid-rows 사용 금지** - 이들은 수직 배치를 만듭니다.

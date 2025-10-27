@@ -22,16 +22,16 @@ export default function CanvasPreview() {
 
   // 개별 박스의 HTML 추출 (CSS 포함)
   const getBoxHTML = (boxId: string) => {
-    // 박스 인덱스 찾기 (boxes 배열에서의 순서)
-    const boxIndex = boxes.findIndex(b => b.id === boxId);
-    if (boxIndex === -1) return currentHTML;
+    // 박스 찾기
+    const box = boxes.find(b => b.id === boxId);
+    if (!box) return currentHTML;
 
     // data-section-id를 사용해서 해당 박스의 HTML만 추출
     const parser = new DOMParser();
     const doc = parser.parseFromString(currentHTML, 'text/html');
 
-    // section-{N} 형태로 찾기 (N은 1부터 시작)
-    const sectionId = `section-${boxIndex + 1}`;
+    // 박스의 sectionId로 찾기 (UUID)
+    const sectionId = box.sectionId;
     const sectionElement = doc.querySelector(`[data-section-id="${sectionId}"]`);
 
     if (sectionElement) {

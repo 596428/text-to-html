@@ -54,9 +54,9 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
       z-index: 9999;
     `;
 
-    boxes.forEach((box, index) => {
-      // data-section-id를 사용해서 실제 렌더링된 요소 찾기
-      const sectionId = `section-${index + 1}`;
+    boxes.forEach((box) => {
+      // data-section-id를 사용해서 실제 렌더링된 요소 찾기 (UUID)
+      const sectionId = box.sectionId;
       const sectionElement = doc.querySelector(`[data-section-id="${sectionId}"]`) as HTMLElement;
 
       if (!sectionElement) {

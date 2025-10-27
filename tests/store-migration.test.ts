@@ -50,6 +50,7 @@ function migrateBox(box: Partial<Box>): Box {
   return {
     ...box,
     id: box.id!,
+    sectionId: box.sectionId ?? `test-section-${box.id}`, // Test용 sectionId 생성
     x: box.x ?? 0,
     y: box.y ?? 0,
     width: box.width ?? DEFAULT_BOX_WIDTH,
@@ -97,6 +98,7 @@ console.assert(migratedPartialBox.layoutType === 'simple',
 // ✅ 테스트 4: 새로 생성된 Box는 layoutType을 가짐
 const newBox: Box = {
   id: 'box-new-1',
+  sectionId: 'test-section-new-1',
   x: 0,
   y: 0,
   width: 12,
@@ -111,6 +113,7 @@ console.assert(newBox.layoutType === 'simple',
 // ✅ 테스트 5: Flex 레이아웃 Box 생성
 const newFlexBox: Box = {
   id: 'box-flex-1',
+  sectionId: 'test-section-flex-1',
   x: 0,
   y: 200,
   width: 12,
@@ -132,6 +135,7 @@ console.assert(newFlexBox.children?.length === 2,
 // ✅ 테스트 6: Table 레이아웃 Box 생성
 const newTableBox: Box = {
   id: 'box-table-1',
+  sectionId: 'test-section-table-1',
   x: 0,
   y: 500,
   width: 12,

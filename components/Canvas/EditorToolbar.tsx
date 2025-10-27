@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useStore } from '@/lib/store';
 import { ERROR_MESSAGES } from '@/lib/constants';
 import { Box } from '@/types';
+import { generateSectionId } from '@/lib/uuid';
 
 export default function EditorToolbar() {
   const boxes = useStore((state) => state.boxes);
@@ -83,6 +84,7 @@ export default function EditorToolbar() {
       // Box 복원 (모든 레이아웃 타입 지원)
       const restoredBoxes: Box[] = metadata.boxes.map((box: any) => ({
         id: box.id,
+        sectionId: box.sectionId || generateSectionId(), // UUID 없으면 생성
         x: box.position.x,
         y: box.position.y,
         width: box.size.width,

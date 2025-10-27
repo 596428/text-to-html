@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useStore } from '@/lib/store';
+import { generateSectionId } from '@/lib/uuid';
 
 interface HTMLEditorProps {
   onComplete: () => void;
@@ -187,9 +188,9 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
       el.setAttribute('data-editable', 'true');
 
-      // 기존 data-section-id가 있으면 보존, 없으면 새로 생성
+      // 기존 data-section-id가 있으면 보존, 없으면 UUID 생성
       if (!el.hasAttribute('data-section-id')) {
-        el.setAttribute('data-section-id', `section-${index + 1}`);
+        el.setAttribute('data-section-id', generateSectionId());
       }
 
       const currentPosition = win.getComputedStyle(el).position;

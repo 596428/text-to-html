@@ -98,6 +98,7 @@ const invalidTable: TableStructure = {
 // ✅ 기존 필드만 사용하는 Box (하위 호환성)
 const legacyBox: Box = {
   id: 'box-1',
+  sectionId: 'test-section-1',
   x: 0,
   y: 0,
   width: 12,
@@ -110,6 +111,7 @@ const legacyBox: Box = {
 // ✅ Simple 레이아웃 Box
 const simpleBox: Box = {
   id: 'box-2',
+  sectionId: 'test-section-2',
   x: 0,
   y: 0,
   width: 12,
@@ -123,6 +125,7 @@ const simpleBox: Box = {
 // ✅ 모든 Flex 필드를 포함한 Box
 const flexBox: Box = {
   id: 'box-3',
+  sectionId: 'test-section-3',
   x: 0,
   y: 200,
   width: 12,
@@ -154,6 +157,7 @@ const flexBox: Box = {
 // ✅ TableStructure를 포함한 Box
 const tableBox: Box = {
   id: 'box-5',
+  sectionId: 'test-section-5',
   x: 0,
   y: 500,
   width: 12,
@@ -184,6 +188,7 @@ const tableBox: Box = {
 // ✅ Popup 필드가 있는 Box
 const boxWithPopup: Box = {
   id: 'box-6',
+  sectionId: 'test-section-6',
   x: 0,
   y: 0,
   width: 6,
@@ -200,6 +205,7 @@ const boxWithPopup: Box = {
 // ✅ Flex + Popup 조합
 const flexBoxWithPopup: Box = {
   id: 'box-7',
+  sectionId: 'test-section-7',
   x: 6,
   y: 0,
   width: 6,
@@ -218,6 +224,7 @@ const flexBoxWithPopup: Box = {
 // ✅ Table + Popup 조합
 const tableBoxWithPopup: Box = {
   id: 'box-8',
+  sectionId: 'test-section-8',
   x: 0,
   y: 700,
   width: 12,

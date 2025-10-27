@@ -33,6 +33,7 @@ export default function PreviewToolbar() {
       createdAt: new Date().toISOString(),
       boxes: boxes.map(box => ({
         id: box.id,
+        sectionId: box.sectionId, // UUID 저장
         position: { x: box.x, y: box.y },
         size: { width: box.width, height: box.height },
         content: box.content,
