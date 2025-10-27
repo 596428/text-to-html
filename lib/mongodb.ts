@@ -3,8 +3,8 @@ import { MongoClient, Db } from 'mongodb';
 const uri = process.env.MONGODB_URI || '';
 const options = {};
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+let client: MongoClient | undefined;
+let clientPromise: Promise<MongoClient> | undefined;
 
 // 런타임에만 연결 (빌드 타임에는 스킵)
 if (uri && typeof window === 'undefined') {
@@ -26,7 +26,7 @@ if (uri && typeof window === 'undefined') {
   }
 }
 
-export default clientPromise;
+export default clientPromise as Promise<MongoClient>;
 
 // 데이터베이스 및 컬렉션 헬퍼
 export async function getDatabase(dbName: string = 'text-to-html'): Promise<Db> {
