@@ -418,16 +418,13 @@ ${content}
 </html>`;
   }
 
-  // Case 2: 박스가 2개 이상이면 24컬럼 그리드 배치
+  // Case 2: 박스가 2개 이상이면 컨테이너 방식으로 수직 배치 (그리드 클래스 제거)
   const bodyContent = loadedBoxes
     .map((box) => {
       const content = extractSectionFromLoadedHtml(box.loadedHtml || '');
 
-      // 24컬럼 그리드 기준으로 배치
-      const colSpan = Math.round((box.width / 24) * 24); // width는 1-24 범위
-      const rowStart = Math.floor(box.y / 100) + 1; // y를 row로 변환
-
-      return `<div class="col-span-${colSpan}" style="grid-row-start: ${rowStart};">
+      // 그리드 클래스 대신 상대적 너비 사용 (동적 크기 조절 가능)
+      return `<div class="w-full">
 ${content}
 </div>`;
     })
@@ -445,10 +442,8 @@ ${content}
   </style>
 </head>
 <body class="bg-gray-100 text-gray-700">
-  <div class="container mx-auto max-w-screen-2xl p-4">
-    <div class="grid grid-cols-24 gap-4 auto-rows-min">
+  <div class="container mx-auto max-w-screen-2xl p-4 space-y-4">
 ${bodyContent}
-    </div>
   </div>
 </body>
 </html>`;
