@@ -40,6 +40,8 @@ export const useStore = create<AppState>()(
         canvasMode: 'edit' as const,
         boxes: [],
         selectedBoxId: null,
+        selectedSectionId: null, // 프리뷰에서 선택된 섹션 ID
+        previewScale: 100, // 기본 100%
         htmlVersions: [],
         currentVersion: 0,
         chatMessages: [],
@@ -121,7 +123,9 @@ export const useStore = create<AppState>()(
         // ========== UI 상태 ==========
         setCanvasMode: (mode) => set({ canvasMode: mode }),
         setGenerating: (value) => set({ isGenerating: value }),
-        setError: (error) => set({ error })
+        setError: (error) => set({ error }),
+        setSelectedSectionId: (id) => set({ selectedSectionId: id }),
+        setPreviewScale: (scale) => set({ previewScale: scale })
       }),
       {
         name: 'text-to-html-storage',

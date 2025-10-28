@@ -108,6 +108,23 @@ ${box.children.map((child, j) => `  ${j + 1}. ${child.content || '(설명 없음
 ${box.popupContent || '팝업 기본 내용'}`;
   }
 
+  // 배율 조정 처리
+  if (box.scalePercentage && box.scalePercentage !== 100) {
+    boxDescription += `
+
+- **🎯 중요: 배율 조정 ${box.scalePercentage}%**
+  이 영역의 **모든 크기 관련 값**을 ${box.scalePercentage}%로 조정하세요:
+  1. **font-size**: 16px → ${Math.round(16 * box.scalePercentage / 100)}px
+  2. **padding**: p-2 → p-${Math.max(1, Math.round(2 * box.scalePercentage / 100))}
+  3. **테이블**:
+     - 셀 padding: p-2 → p-${Math.max(1, Math.round(2 * box.scalePercentage / 100))}
+     - 폰트 크기, border-width 등 모든 크기 속성
+  4. **간격**: gap-4, space-y-4 등 모든 간격 클래스
+  5. **아이콘/버튼**: 크기와 패딩 모두 조정
+
+  ⚠️ **주의**: 컨테이너 너비(col-span-X)는 변경하지 마세요. 내부 요소만 조정하세요.`;
+  }
+
   return boxDescription;
 }).join('\n')}
 

@@ -328,7 +328,7 @@ export default function GridBox({ box }: GridBoxProps) {
               layoutType: 'loaded',
               loadedComponentId: component.id,
               loadedHtml: component.html,
-              width: component.width,
+              width: Math.max(8, component.width), // 최소 너비 8칸
               height: component.height,
             });
             setIsComponentLibraryOpen(false);

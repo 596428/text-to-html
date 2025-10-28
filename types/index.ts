@@ -61,6 +61,9 @@ export interface Box {
   hasPopup?: boolean;           // 팝업 보유 여부
   popupContent?: string;        // 팝업 HTML 컨텐츠 (HTMLEditor로 편집 가능)
   popupTriggerText?: string;    // 팝업 트리거 버튼 텍스트
+
+  // 배율 조정 (컴포넌트 재생성용)
+  scalePercentage?: number;     // 50 ~ 200 (기본값: 100)
 }
 
 export interface HTMLVersion {
@@ -134,6 +137,12 @@ export interface AppState {
   setGenerating: (value: boolean) => void;
   error: string | null;
   setError: (error: string | null) => void;
+
+  // 프리뷰 선택 상태
+  selectedSectionId: string | null;
+  setSelectedSectionId: (id: string | null) => void;
+  previewScale: number; // 슬라이더로 조정하는 미리보기 스케일 (실시간)
+  setPreviewScale: (scale: number) => void;
 }
 
 // ============ API 타입 ============

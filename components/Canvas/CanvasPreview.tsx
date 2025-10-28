@@ -143,8 +143,7 @@ export default function CanvasPreview() {
         <div className="flex-1 bg-white rounded-lg shadow-2xl overflow-hidden">
           {editMode === 'view' ? (
             <IframePreview
-              enableBoxClick={showSaveButtons}
-              onBoxClick={handleSaveBox}
+              enableBoxClick={true}
             />
           ) : (
             <HTMLEditor onComplete={() => setEditMode('view')} />

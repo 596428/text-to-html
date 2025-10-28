@@ -11,8 +11,12 @@ export default function VersionSelector() {
     return null;
   }
 
-  const canGoPrev = currentVersion > 1;
-  const canGoNext = currentVersion < htmlVersions.length;
+  // 버전 번호의 최소값과 최대값 계산
+  const minVersion = Math.min(...htmlVersions.map(v => v.version));
+  const maxVersion = Math.max(...htmlVersions.map(v => v.version));
+
+  const canGoPrev = currentVersion > minVersion;
+  const canGoNext = currentVersion < maxVersion;
 
   const currentVersionData = htmlVersions.find((v) => v.version === currentVersion);
 

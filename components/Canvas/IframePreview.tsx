@@ -14,6 +14,9 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
   const currentVersion = useStore((state) => state.currentVersion);
   const error = useStore((state) => state.error);
   const boxes = useStore((state) => state.boxes);
+  const setSelectedSectionId = useStore((state) => state.setSelectedSectionId);
+  const selectedSectionId = useStore((state) => state.selectedSectionId);
+  const previewScale = useStore((state) => state.previewScale);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [hoveredBoxId, setHoveredBoxId] = useState<string | null>(null);
 
@@ -132,6 +135,8 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
       };
 
       const overlayClick = () => {
+        // 섹션 선택 상태 업데이트
+        setSelectedSectionId(box.sectionId);
         onBoxClick?.(box);
       };
 
@@ -184,6 +189,34 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
       }
     };
   }, [currentHTML, enableBoxClick, boxes, onBoxClick]);
+
+  // 실시간 스케일 미리보기 적용
+  useEffect(() => {
+    if (!iframeRef.current || !selectedSectionId || !currentHTML) return;
+
+    const iframe = iframeRef.current;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc || !doc.body) return;
+
+    // 선택된 섹션 찾기
+    const sectionElement = doc.querySelector(`[data-section-id="${selectedSectionId}"]`) as HTMLElement;
+    if (!sectionElement) return;
+
+    // Transform scale 적용
+    const scale = previewScale / 100;
+    sectionElement.style.transform = `scale(${scale})`;
+    sectionElement.style.transformOrigin = 'top left';
+    sectionElement.style.transition = 'transform 0.2s ease-out';
+
+    // 클린업
+    return () => {
+      if (sectionElement) {
+        sectionElement.style.transform = '';
+        sectionElement.style.transformOrigin = '';
+        sectionElement.style.transition = '';
+      }
+    };
+  }, [selectedSectionId, previewScale, currentHTML]);
 
   // 에러 표시
   if (error) {
