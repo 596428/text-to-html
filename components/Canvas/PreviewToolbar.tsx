@@ -87,10 +87,7 @@ export default function PreviewToolbar() {
         // Flex 레이아웃 관련
         ...(box.layoutType === 'flex' && {
           flexDirection: box.flexDirection,
-          flexWrap: box.flexWrap,
-          justifyContent: box.justifyContent,
-          alignItems: box.alignItems,
-          gap: box.gap,
+          flexAlign: box.flexAlign,
           children: box.children
         }),
 
