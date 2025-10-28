@@ -78,7 +78,7 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
       const sectionElement = doc.querySelector(`[data-section-id="${sectionId}"]`) as HTMLElement;
 
       if (!sectionElement) {
-        console.warn(`Section element with id="${sectionId}" not found`);
+        // HTML이 아직 생성되지 않았거나 sectionId가 일치하지 않음 (정상 케이스)
         return;
       }
 

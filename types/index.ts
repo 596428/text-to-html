@@ -7,10 +7,7 @@ export type LayoutType = 'simple' | 'flex' | 'table' | 'loaded';
 export interface ChildElement {
   id: string;
   content: string;          // 요소 설명
-  flexGrow?: number;        // flex-grow 값 (기본: 1)
-  flexShrink?: number;      // flex-shrink 값 (기본: 1)
-  flexBasis?: string;       // flex-basis 값 (기본: 'auto')
-  order?: number;           // 정렬 순서
+  spaceRatio: number;       // 공간 비율 (%) - 부모의 너비/높이에서 차지할 비율
 }
 
 // 테이블 구조
@@ -42,11 +39,8 @@ export interface Box {
   layoutType?: LayoutType;  // 기본: 'simple'
 
   // Flex 레이아웃 관련 (Phase 1 사용)
-  flexDirection?: 'row' | 'column';           // flex 방향
-  flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';  // flex 줄바꿈
-  justifyContent?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
-  alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
-  gap?: number;                                // flex 간격 (px)
+  flexDirection?: 'row' | 'column';           // flex 방향 (가로/세로)
+  flexAlign?: 'left' | 'right' | 'center';    // 정렬 방식 (왼쪽/오른쪽/가운데) - row일 때만 유효
   children?: ChildElement[];                   // 자식 요소 배열
 
   // 테이블 레이아웃 관련 (Phase 2 사용)

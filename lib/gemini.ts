@@ -8,8 +8,15 @@ import { logHTMLGeneration, logHTMLModification } from '@/lib/logger';
 const API_KEYS = [
   process.env.GEMINI_API_KEY_1,
   process.env.GEMINI_API_KEY_2,
-  process.env.GEMINI_API_KEY_3
-].filter(Boolean) as string[];
+  process.env.GEMINI_API_KEY_3,
+  process.env.GEMINI_API_KEY_4,
+  process.env.GEMINI_API_KEY_5,
+  process.env.GEMINI_API_KEY_6,
+  process.env.GEMINI_API_KEY_7,
+  process.env.GEMINI_API_KEY_8,
+  process.env.GEMINI_API_KEY_9,
+  process.env.GEMINI_API_KEY_10
+].filter(Boolean) as string[]; // undefined 자동 제거
 
 let currentKeyIndex = 0;
 
@@ -52,20 +59,31 @@ ${generateBoxes.map((box, i) => {
 
   // Flex 레이아웃 처리
   if (box.layoutType === 'flex' && box.children && box.children.length > 0) {
+    const direction = box.flexDirection || 'row';
+    const align = box.flexAlign || 'left';
+
+    // 정렬 방식을 CSS justify-content로 변환
+    const justifyContentMap = {
+      'left': 'flex-start',
+      'right': 'flex-end',
+      'center': 'center'
+    };
+    const justifyContent = direction === 'row' ? justifyContentMap[align] : 'flex-start';
+
     boxDescription += `
 - **Flex 레이아웃 설정**:
-  - Direction: ${box.flexDirection || 'row'}
-  - Wrap: ${box.flexWrap || 'nowrap'}
-  - Justify Content: ${box.justifyContent || 'flex-start'}
-  - Align Items: ${box.alignItems || 'stretch'}
-  - Gap: ${box.gap || 0}px
+  - 방향: ${direction === 'row' ? '가로 (1×N)' : '세로 (N×1)'}
+  - 정렬: ${direction === 'row' ? (align === 'left' ? '왼쪽' : align === 'right' ? '오른쪽' : '가운데') : '위쪽 (고정)'}
+  - 자식 요소 간격: 균등 분배 (space-evenly)
 
 - **자식 요소들** (${box.children.length}개):
 ${box.children.map((child, j) => `  ${j + 1}. ${child.content || '(설명 없음)'}
-     - flexGrow: ${child.flexGrow ?? 1}
-     - flexShrink: ${child.flexShrink ?? 1}
-     - flexBasis: ${child.flexBasis ?? 'auto'}
-     - order: ${child.order ?? j}`).join('\n')}`;
+     - 공간 비율: ${child.spaceRatio}% (부모의 ${direction === 'row' ? '너비' : '높이'}의 ${child.spaceRatio}%)`).join('\n')}
+
+- **구현 방법**:
+  - 컨테이너: display: flex; flex-direction: ${direction}; justify-content: ${justifyContent}; align-items: center; gap으로 균등 간격
+  - 각 자식: width(또는 height): ${direction === 'row' ? 'spaceRatio%' : 'auto'}, 또는 flex-basis 사용
+  - 남은 공간: ${100 - box.children.reduce((sum, c) => sum + c.spaceRatio, 0)}%는 정렬 방식에 따라 자동 배치`;
   } else if (box.layoutType === 'table' && box.tableStructure) {
     // Table 레이아웃 처리
     const table = box.tableStructure;
@@ -167,17 +185,16 @@ ${box.popupContent || '팝업 기본 내용'}`;
 # Flex 레이아웃 구현 규칙
 13. Flex 레이아웃 타입의 영역은 다음과 같이 구현하세요:
     - 컨테이너에 "display: flex" 또는 Tailwind의 "flex" 클래스 사용
-    - flexDirection에 따라 "flex-row" 또는 "flex-column" 적용
-    - flexWrap에 따라 "flex-nowrap", "flex-wrap", "flex-wrap-reverse" 적용
-    - justifyContent에 따라 "justify-start", "justify-center", "justify-between" 등 적용
-    - alignItems에 따라 "items-start", "items-center", "items-stretch" 등 적용
-    - gap이 있으면 "gap-{N}" 클래스 적용 (예: gap-4)
+    - 방향에 따라 "flex-row" (가로) 또는 "flex-column" (세로) 적용
+    - 정렬 방식에 따라 "justify-start" (왼쪽), "justify-end" (오른쪽), "justify-center" (가운데) 적용
+    - 항상 "items-center"로 교차축 정렬
+    - 자식 요소 간 균등한 간격: "gap-4" 또는 적절한 gap 값 사용
 14. 각 자식 요소는 다음과 같이 구현하세요:
-    - flexGrow가 있으면 인라인 스타일 "flex-grow: {N}" 또는 Tailwind "flex-grow-{N}" 적용
-    - flexShrink가 있으면 인라인 스타일 "flex-shrink: {N}" 적용
-    - flexBasis가 있으면 인라인 스타일 "flex-basis: {value}" 적용
-    - order가 있으면 인라인 스타일 "order: {N}" 또는 Tailwind "order-{N}" 적용
-    - 각 자식 요소의 content 설명에 따라 실제 HTML 요소 생성
+    - 공간 비율(spaceRatio)에 따라 width(가로) 또는 height(세로) 설정
+    - 예: 가로 방향에서 spaceRatio가 30%이면 → style="width: 30%"
+    - 예: 세로 방향에서 spaceRatio가 50%이면 → style="height: 50%"
+    - 각 자식 요소의 content 설명에 따라 실제 HTML 요소 생성 (버튼, 입력필드, 텍스트 등)
+    - 남은 공간(100% - 총 spaceRatio)은 정렬 방식에 따라 자동 배치됨
 
 # Table 레이아웃 구현 규칙
 15. Table 레이아웃 타입의 영역은 다음과 같이 구현하세요:

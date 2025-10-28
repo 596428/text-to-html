@@ -14,7 +14,14 @@ envContent.split('\n').forEach(line => {
 const API_KEYS = [
   { name: 'GEMINI_API_KEY_1', key: env.GEMINI_API_KEY_1 },
   { name: 'GEMINI_API_KEY_2', key: env.GEMINI_API_KEY_2 },
-  { name: 'GEMINI_API_KEY_3', key: env.GEMINI_API_KEY_3 || env.GEMINI_API_KEY }
+  { name: 'GEMINI_API_KEY_3', key: env.GEMINI_API_KEY_3 },
+  { name: 'GEMINI_API_KEY_4', key: env.GEMINI_API_KEY_4 },
+  { name: 'GEMINI_API_KEY_5', key: env.GEMINI_API_KEY_5 },
+  { name: 'GEMINI_API_KEY_6', key: env.GEMINI_API_KEY_6 },
+  { name: 'GEMINI_API_KEY_7', key: env.GEMINI_API_KEY_7 },
+  { name: 'GEMINI_API_KEY_8', key: env.GEMINI_API_KEY_8 },
+  { name: 'GEMINI_API_KEY_9', key: env.GEMINI_API_KEY_9 },
+  { name: 'GEMINI_API_KEY_10', key: env.GEMINI_API_KEY_10 }
 ];
 
 async function checkKey(name, key, index) {
