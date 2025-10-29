@@ -102,8 +102,19 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       return match ? parseInt(match[1]) : 1;
     };
 
+    const getRowStart = (el: HTMLElement): number => {
+      const match = el.className.match(/row-start-(\d+)/);
+      return match ? parseInt(match[1]) : 1;
+    };
+
     const setColStart = (el: HTMLElement, value: number) => {
       el.className = el.className.replace(/col-start-\d+/, `col-start-${value}`);
+    };
+
+    const setRowStart = (el: HTMLElement, value: number) => {
+      // 기존 row-start 클래스 제거 후 추가
+      el.className = el.className.replace(/row-start-\d+/g, '').trim();
+      el.className += ` row-start-${value}`;
     };
 
     const getGridContainer = (): HTMLElement | null => {
@@ -350,7 +361,7 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
     // mousemove - 드래그 또는 리사이즈
     doc.addEventListener('mousemove', (e: MouseEvent) => {
-      // 드래그 중 - 그리드 기반 이동
+      // 드래그 중 - 2D 그리드 자유 배치
       if (draggedElement && !resizingElement) {
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
@@ -365,17 +376,24 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
         const gridsMoved = Math.round(deltaX / gridWidth);
         const currentColStart = getColStart(draggedElement);
         const currentColSpan = getColSpan(draggedElement);
-
-        // 새 위치 계산 (1~24 범위 제한)
         const newColStart = Math.max(1, Math.min(24 - currentColSpan + 1, currentColStart + gridsMoved));
+
+        // 상하 이동: 행 단위로 계산
+        // 박스 높이를 기준으로 행 이동 계산
+        const boxHeight = draggedElement.offsetHeight;
+        const rowsMoved = Math.round(deltaY / (boxHeight + 16)); // 16px는 gap-4
+        const currentRowStart = getRowStart(draggedElement);
+        const newRowStart = Math.max(1, currentRowStart + rowsMoved);
 
         // 시각적 피드백을 위해 임시로 transform 사용 (저장 시 제거됨)
         const actualGridsMoved = newColStart - currentColStart;
         const visualOffsetX = actualGridsMoved * gridWidth;
-        draggedElement.style.transform = `translate(${visualOffsetX}px, ${deltaY}px)`;
+        const visualOffsetY = (newRowStart - currentRowStart) * (boxHeight + 16);
 
-        // 상하 이동 방향 표시
-        if (Math.abs(deltaY) > 30) {
+        draggedElement.style.transform = `translate(${visualOffsetX}px, ${visualOffsetY}px)`;
+
+        // 이동 중 투명도 효과
+        if (Math.abs(gridsMoved) > 0 || Math.abs(rowsMoved) > 0) {
           draggedElement.style.opacity = '0.7';
         } else {
           draggedElement.style.opacity = '1';
@@ -421,31 +439,25 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
           const currentColSpan = getColSpan(draggedElement);
           const newColStart = Math.max(1, Math.min(24 - currentColSpan + 1, currentColStart + gridsMoved));
 
+          // 상하 이동: row-start 값 변경
+          const boxHeight = draggedElement.offsetHeight;
+          const rowsMoved = Math.round(deltaY / (boxHeight + 16));
+          const currentRowStart = getRowStart(draggedElement);
+          const newRowStart = Math.max(1, currentRowStart + rowsMoved);
+
+          // 변경사항 적용
+          let moved = false;
           if (newColStart !== currentColStart) {
             setColStart(draggedElement, newColStart);
-            setDebugInfo(`✅ 좌우 이동: ${currentColStart} → ${newColStart} 그리드`);
+            moved = true;
+          }
+          if (newRowStart !== currentRowStart) {
+            setRowStart(draggedElement, newRowStart);
+            moved = true;
           }
 
-          // 상하 이동: DOM 순서 변경
-          if (Math.abs(deltaY) > 30) {
-            const allBoxes = Array.from(doc.querySelectorAll('[data-editable="true"]')) as HTMLElement[];
-            const currentIndex = allBoxes.indexOf(draggedElement);
-
-            if (deltaY > 0 && currentIndex < allBoxes.length - 1) {
-              // 아래로 이동
-              const nextBox = allBoxes[currentIndex + 1];
-              if (gridContainer && nextBox) {
-                gridContainer.insertBefore(draggedElement, nextBox.nextSibling);
-                setDebugInfo(`✅ 아래로 이동`);
-              }
-            } else if (deltaY < 0 && currentIndex > 0) {
-              // 위로 이동
-              const prevBox = allBoxes[currentIndex - 1];
-              if (gridContainer && prevBox) {
-                gridContainer.insertBefore(draggedElement, prevBox);
-                setDebugInfo(`✅ 위로 이동`);
-              }
-            }
+          if (moved) {
+            setDebugInfo(`✅ 이동 완료: 그리드(${newColStart}, ${newRowStart})`);
           }
         }
 
