@@ -121,6 +121,56 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       return doc.querySelector('.grid.grid-cols-24') as HTMLElement;
     };
 
+    // 그리드 가이드라인 생성
+    const createGridOverlay = () => {
+      const gridContainer = getGridContainer();
+      if (!gridContainer) return;
+
+      // 기존 오버레이 제거
+      const existingOverlay = doc.getElementById('grid-overlay');
+      if (existingOverlay) existingOverlay.remove();
+
+      // 오버레이 컨테이너 생성
+      const overlay = doc.createElement('div');
+      overlay.id = 'grid-overlay';
+      overlay.style.position = 'absolute';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.zIndex = '1';
+
+      const containerWidth = gridContainer.offsetWidth;
+      const gridWidth = containerWidth / 24;
+
+      // 24개 세로 점선 생성
+      for (let i = 1; i <= 24; i++) {
+        const line = doc.createElement('div');
+        line.style.position = 'absolute';
+        line.style.left = `${i * gridWidth}px`;
+        line.style.top = '0';
+        line.style.width = '1px';
+        line.style.height = '100%';
+        line.style.borderLeft = '1px dashed rgba(59, 130, 246, 0.3)';
+        line.style.pointerEvents = 'none';
+        overlay.appendChild(line);
+      }
+
+      // 그리드 컨테이너를 relative로 설정하고 오버레이 추가
+      const originalPosition = gridContainer.style.position;
+      if (!originalPosition || originalPosition === 'static') {
+        gridContainer.style.position = 'relative';
+      }
+      gridContainer.insertBefore(overlay, gridContainer.firstChild);
+    };
+
+    // 그리드 오버레이 제거
+    const removeGridOverlay = () => {
+      const overlay = doc.getElementById('grid-overlay');
+      if (overlay) overlay.remove();
+    };
+
     // 현재 선택된 요소의 컨트롤 제거
     const removeControls = () => {
       doc.querySelectorAll('.resize-handle, .delete-btn').forEach(el => el.remove());
@@ -359,6 +409,9 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
     setDebugInfo(`✅ 편집 가능한 요소: ${editableCount}개`);
 
+    // 그리드 가이드라인 표시
+    createGridOverlay();
+
     // mousemove - 드래그 또는 리사이즈
     doc.addEventListener('mousemove', (e: MouseEvent) => {
       // 드래그 중 - 2D 그리드 자유 배치
@@ -484,7 +537,11 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
     const doc = iframeRef.current.contentDocument;
     if (!doc) return;
 
-    // 1. 컨트롤 제거 (핸들, 삭제 버튼)
+    // 1. 그리드 오버레이 제거
+    const gridOverlay = doc.getElementById('grid-overlay');
+    if (gridOverlay) gridOverlay.remove();
+
+    // 2. 컨트롤 제거 (핸들, 삭제 버튼)
     doc.querySelectorAll('.resize-handle, .delete-btn').forEach(el => el.remove());
 
     // 2. 편집용 스타일만 제거 (사용자가 변경한 크기/위치는 유지)
