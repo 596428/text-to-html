@@ -326,7 +326,11 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
       </div>
 
       {/* 테이블 미리보기 및 편집 */}
-      <div className="overflow-auto max-h-96 border rounded-md bg-white">
+      <div
+        className="overflow-auto max-h-96 border rounded-md bg-white"
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+      >
         <table className="w-full border-collapse">
           <tbody>
             {tableStructure.cells.map((row, rowIndex) => (
@@ -350,11 +354,7 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                         e.stopPropagation();
                         handleDragStart(rowIndex, colIndex);
                       }}
-                      onMouseEnter={() => handleDragOver(rowIndex, colIndex)}
-                      onMouseUp={(e) => {
-                        e.stopPropagation();
-                        handleDragEnd();
-                      }}
+                      onMouseOver={() => handleDragOver(rowIndex, colIndex)}
                     >
                       <textarea
                         value={cell.content || ''}
