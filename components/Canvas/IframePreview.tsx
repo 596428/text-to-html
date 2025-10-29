@@ -202,20 +202,28 @@ export default function IframePreview({ onBoxClick, enableBoxClick = false }: If
     const sectionElement = doc.querySelector(`[data-section-id="${selectedSectionId}"]`) as HTMLElement;
     if (!sectionElement) return;
 
-    // Transform scale 적용
-    const scale = previewScale / 100;
-    sectionElement.style.transform = `scale(${scale})`;
-    sectionElement.style.transformOrigin = 'top left';
-    sectionElement.style.transition = 'transform 0.2s ease-out';
+    // 이미 인라인 transform이 있는지 확인 (재생성된 경우)
+    const hasInlineTransform = sectionElement.style.transform && sectionElement.style.transform.includes('scale');
 
-    // 클린업
-    return () => {
-      if (sectionElement) {
+    // 인라인 transform이 없고, previewScale이 100이 아닐 때만 추가 transform 적용
+    if (!hasInlineTransform && previewScale !== 100) {
+      // Transform scale 적용
+      const scale = previewScale / 100;
+      sectionElement.style.transform = `scale(${scale})`;
+      sectionElement.style.transformOrigin = 'top left';
+      sectionElement.style.transition = 'transform 0.2s ease-out';
+
+      // 클린업 - 추가한 transform만 제거
+      return () => {
+        if (sectionElement && !sectionElement.style.transform.includes('scale')) {
+          // 이미 다른 transform이 적용된 경우 제거하지 않음
+          return;
+        }
         sectionElement.style.transform = '';
         sectionElement.style.transformOrigin = '';
         sectionElement.style.transition = '';
-      }
-    };
+      };
+    }
   }, [selectedSectionId, previewScale, currentHTML]);
 
   // 에러 표시

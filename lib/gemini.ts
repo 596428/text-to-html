@@ -150,8 +150,12 @@ ${box.popupContent || '팝업 기본 내용'}`;
 1. <!DOCTYPE html>부터 </html>까지 **완전한 파일**
 2. **TailwindCSS CDN 고정 버전**: 반드시 다음 CDN을 사용하세요
    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-3. **컨테이너 너비 표준화**:
-   - 메인 컨테이너: <div class="container mx-auto max-w-screen-2xl space-y-4">
+3. **24컬럼 그리드 시스템 (매우 중요)**:
+   - 메인 컨테이너: <div class="container mx-auto max-w-screen-2xl"><div class="grid grid-cols-24 gap-4 auto-rows-min">
+   - 각 영역의 바깥쪽 컨테이너에 **반드시** col-span-{width} 클래스 적용
+   - 예: 너비가 12/24이면 → <div class="col-span-12 p-4 bg-white border" data-editable="true">
+   - 예: 너비가 24/24이면 → <div class="col-span-24 p-4 bg-white border" data-editable="true">
+   - ⚠️ 주의: 바깥쪽 컨테이너(data-editable="true"를 가진 div)에만 col-span-{width}를 적용하세요
    - w-10/12, w-11/12 같은 비율 너비 사용 금지
 4. **패딩/간격 표준**:
    - 버튼: px-4 py-2
@@ -452,13 +456,16 @@ ${content}
 </html>`;
   }
 
-  // Case 2: 박스가 2개 이상이면 컨테이너 방식으로 수직 배치 (그리드 클래스 제거)
+  // Case 2: 박스가 2개 이상이면 24컬럼 그리드 배치
   const bodyContent = loadedBoxes
     .map((box) => {
       const content = extractSectionFromLoadedHtml(box.loadedHtml || '');
 
-      // 그리드 클래스 대신 상대적 너비 사용 (동적 크기 조절 가능)
-      return `<div class="w-full">
+      // 24컬럼 그리드 기준으로 배치
+      const colSpan = Math.round((box.width / 24) * 24); // width는 1-24 범위
+      const rowStart = Math.floor(box.y / 100) + 1; // y를 row로 변환
+
+      return `<div class="col-span-${colSpan}" style="grid-row-start: ${rowStart};">
 ${content}
 </div>`;
     })
@@ -476,8 +483,10 @@ ${content}
   </style>
 </head>
 <body class="bg-gray-100 text-gray-700">
-  <div class="container mx-auto max-w-screen-2xl p-4 space-y-4">
+  <div class="container mx-auto max-w-screen-2xl p-4">
+    <div class="grid grid-cols-24 gap-4 auto-rows-min">
 ${bodyContent}
+    </div>
   </div>
 </body>
 </html>`;

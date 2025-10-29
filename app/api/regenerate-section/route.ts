@@ -26,11 +26,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 유효한 배율 검증
-    const validScales = [50, 75, 100, 125, 150, 200];
-    if (!validScales.includes(scalePercentage)) {
+    // 유효한 배율 검증 (50~200 사이의 자연수)
+    if (!Number.isInteger(scalePercentage) || scalePercentage < 50 || scalePercentage > 200) {
       return NextResponse.json(
-        { error: `유효하지 않은 배율입니다. 가능한 값: ${validScales.join(', ')}` },
+        { error: `유효하지 않은 배율입니다. 50~200 사이의 자연수를 입력하세요. (입력값: ${scalePercentage})` },
         { status: 400 }
       );
     }

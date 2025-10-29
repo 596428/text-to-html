@@ -43,8 +43,8 @@ export default function PreviewToolbar() {
   const handleScaleInputBlur = () => {
     const numValue = parseInt(scaleInputValue);
     if (!isNaN(numValue)) {
-      // 범위 제한 (25% ~ 300%)
-      const clampedValue = Math.max(25, Math.min(300, numValue));
+      // 범위 제한 (50% ~ 200%)
+      const clampedValue = Math.max(50, Math.min(200, numValue));
       setPreviewScale(clampedValue);
     }
     setIsEditingScale(false);
@@ -193,8 +193,8 @@ ${JSON.stringify(metadata, null, 2)}
               <span className="text-white text-sm">배율:</span>
               <input
                 type="range"
-                min="25"
-                max="300"
+                min="50"
+                max="200"
                 step="1"
                 value={previewScale}
                 onChange={(e) => setPreviewScale(Number(e.target.value))}
