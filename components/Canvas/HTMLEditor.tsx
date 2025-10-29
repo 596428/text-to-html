@@ -406,7 +406,12 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       element.style.maxHeight = '';
       element.style.boxSizing = '';
 
-      // width, height, left, top은 유지 (사용자가 변경한 크기/위치)
+      // 브라우저 zoom 호환성: left/top 픽셀 오프셋 제거
+      // (Tailwind grid의 col-start/col-span이 비율 기반이므로)
+      element.style.left = '';
+      element.style.top = '';
+
+      // width, height은 유지 (사용자가 변경한 크기)
       // position: relative도 유지
 
       // contentEditable 속성 제거
