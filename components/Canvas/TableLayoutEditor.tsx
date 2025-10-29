@@ -348,8 +348,8 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                       rowSpan={cell.rowSpan || 1}
                       colSpan={cell.colSpan || 1}
                       className={`border border-gray-300 p-2 h-[76px] ${
-                        isSelected ? 'bg-blue-100' : cell.isHeader ? 'bg-gray-100' : 'bg-white'
-                      } cursor-pointer hover:bg-gray-50 select-none align-top`}
+                        isSelected ? 'bg-blue-100' : cell.isHeader ? 'bg-gray-100 hover:bg-gray-50' : 'bg-white hover:bg-gray-50'
+                      } cursor-pointer select-none align-top`}
                       onClick={(e) => {
                         if (e.ctrlKey || e.metaKey) {
                           e.stopPropagation();
