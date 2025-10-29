@@ -10,6 +10,8 @@ interface TableLayoutEditorProps {
 
 export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{row: number, col: number} | null>(null);
 
   // 초기 테이블 구조 생성
   const initializeTable = (rows: number, cols: number): TableStructure => {
@@ -78,6 +80,42 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
     }
 
     setSelectedCells(newSelected);
+  };
+
+  // 드래그 시작
+  const handleDragStart = (rowIndex: number, colIndex: number) => {
+    setIsDragging(true);
+    setDragStart({ row: rowIndex, col: colIndex });
+    setSelectedCells(new Set([`${rowIndex}-${colIndex}`]));
+  };
+
+  // 드래그 중
+  const handleDragOver = (rowIndex: number, colIndex: number) => {
+    if (!isDragging || !dragStart) return;
+
+    // 드래그 영역 계산
+    const minRow = Math.min(dragStart.row, rowIndex);
+    const maxRow = Math.max(dragStart.row, rowIndex);
+    const minCol = Math.min(dragStart.col, colIndex);
+    const maxCol = Math.max(dragStart.col, colIndex);
+
+    // 선택 영역의 모든 셀 추가
+    const newSelected = new Set<string>();
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        // 병합으로 숨겨진 셀은 제외
+        if (tableStructure.cells[r] && tableStructure.cells[r][c] && tableStructure.cells[r][c].content !== undefined) {
+          newSelected.add(`${r}-${c}`);
+        }
+      }
+    }
+
+    setSelectedCells(newSelected);
+  };
+
+  // 드래그 종료
+  const handleDragEnd = () => {
+    setIsDragging(false);
   };
 
   // 선택된 셀 병합
@@ -306,13 +344,18 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                       colSpan={cell.colSpan || 1}
                       className={`border border-gray-300 p-2 ${
                         isSelected ? 'bg-blue-100' : cell.isHeader ? 'bg-gray-100' : 'bg-white'
-                      } cursor-pointer hover:bg-gray-50`}
+                      } cursor-pointer hover:bg-gray-50 select-none`}
                       onClick={() => toggleCellSelection(rowIndex, colIndex)}
+                      onMouseDown={() => handleDragStart(rowIndex, colIndex)}
+                      onMouseEnter={() => handleDragOver(rowIndex, colIndex)}
+                      onMouseUp={handleDragEnd}
                     >
                       <textarea
                         value={cell.content || ''}
                         onChange={(e) => updateCell(rowIndex, colIndex, { content: e.target.value })}
                         onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseMove={(e) => e.stopPropagation()}
                         placeholder={`셀 (${rowIndex + 1}, ${colIndex + 1})`}
                         className="w-full min-h-[60px] p-1 text-xs border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded resize-none"
                       />
@@ -332,7 +375,7 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
       </div>
 
       <p className="text-xs text-gray-500">
-        💡 팁: 셀을 클릭하여 선택한 후 병합할 수 있습니다. 여러 셀을 선택하려면 클릭하세요.
+        💡 팁: 셀을 드래그하여 여러 셀을 한번에 선택하거나, 클릭으로 개별 선택할 수 있습니다. 선택 후 병합 버튼을 클릭하세요.
       </p>
     </div>
   );
