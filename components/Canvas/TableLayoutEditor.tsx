@@ -14,6 +14,12 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
   const [dragStart, setDragStart] = useState<{row: number, col: number} | null>(null);
   const [focusedCell, setFocusedCell] = useState<string | null>(null);
 
+  // Fill handle states
+  const [isFillDragging, setIsFillDragging] = useState(false);
+  const [fillStart, setFillStart] = useState<{row: number, col: number} | null>(null);
+  const [fillDirection, setFillDirection] = useState<'row' | 'col' | null>(null);
+  const [fillRange, setFillRange] = useState<Set<string>>(new Set());
+
   // 초기 테이블 구조 생성
   const initializeTable = (rows: number, cols: number): TableStructure => {
     const cells: TableCell[][] = [];
@@ -226,6 +232,176 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
     setSelectedCells(new Set());
   };
 
+  // Fill handle functions
+  const isNaturalNumber = (value: string): boolean => {
+    const num = parseInt(value);
+    return !isNaN(num) && Number.isInteger(num) && num >= 0 && value === num.toString();
+  };
+
+  const handleFillStart = (rowIndex: number, colIndex: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFillDragging(true);
+    setFillStart({ row: rowIndex, col: colIndex });
+    setFillDirection(null);
+    setFillRange(new Set([`${rowIndex}-${colIndex}`]));
+  };
+
+  const handleFillOver = (rowIndex: number, colIndex: number) => {
+    if (!isFillDragging || !fillStart) return;
+
+    // 첫 움직임으로 방향 결정
+    if (!fillDirection) {
+      const rowDiff = Math.abs(rowIndex - fillStart.row);
+      const colDiff = Math.abs(colIndex - fillStart.col);
+
+      if (rowDiff === 0 && colDiff === 0) return;
+
+      setFillDirection(colDiff > rowDiff ? 'row' : 'col');
+    }
+
+    // 방향에 따라 범위 계산
+    const newRange = new Set<string>();
+    if (fillDirection === 'row') {
+      const minCol = Math.min(fillStart.col, colIndex);
+      const maxCol = Math.max(fillStart.col, colIndex);
+      for (let c = minCol; c <= maxCol; c++) {
+        newRange.add(`${fillStart.row}-${c}`);
+      }
+    } else if (fillDirection === 'col') {
+      const minRow = Math.min(fillStart.row, rowIndex);
+      const maxRow = Math.max(fillStart.row, rowIndex);
+      for (let r = minRow; r <= maxRow; r++) {
+        newRange.add(`${r}-${fillStart.col}`);
+      }
+    }
+
+    setFillRange(newRange);
+  };
+
+  const handleFillEnd = () => {
+    if (!isFillDragging || !fillStart || fillRange.size <= 1) {
+      setIsFillDragging(false);
+      setFillStart(null);
+      setFillDirection(null);
+      setFillRange(new Set());
+      return;
+    }
+
+    const cells = Array.from(fillRange)
+      .map(id => {
+        const [r, c] = id.split('-').map(Number);
+        return { row: r, col: c, content: tableStructure.cells[r][c].content };
+      })
+      .sort((a, b) => {
+        if (fillDirection === 'row') return a.col - b.col;
+        return a.row - b.row;
+      });
+
+    // 단순 복사 (1개 셀)
+    if (selectedCells.size === 1) {
+      const sourceContent = cells[0].content || '';
+
+      // 자연수 체크
+      if (!isNaturalNumber(sourceContent)) {
+        alert('빈칸 채우기는 자연수(0 포함)만 가능합니다.');
+        setIsFillDragging(false);
+        setFillStart(null);
+        setFillDirection(null);
+        setFillRange(new Set());
+        return;
+      }
+
+      // 복사 실행
+      const newCells = tableStructure.cells.map((row, r) =>
+        row.map((cell, c) => {
+          if (fillRange.has(`${r}-${c}`) && !(r === cells[0].row && c === cells[0].col)) {
+            return { ...cell, content: sourceContent };
+          }
+          return cell;
+        })
+      );
+
+      onUpdate({
+        tableStructure: {
+          ...tableStructure,
+          cells: newCells
+        }
+      });
+    }
+    // 패턴 채우기 (2개 셀)
+    else if (selectedCells.size === 2) {
+      const selectedArray = Array.from(selectedCells).map(id => {
+        const [r, c] = id.split('-').map(Number);
+        return { row: r, col: c };
+      }).sort((a, b) => {
+        // 같은 행이면 col로, 같은 열이면 row로 정렬
+        if (a.row === b.row) return a.col - b.col;
+        return a.row - b.row;
+      });
+
+      // 같은 행 또는 열인지 확인
+      const sameRow = selectedArray[0].row === selectedArray[1].row;
+      const sameCol = selectedArray[0].col === selectedArray[1].col;
+
+      if (!sameRow && !sameCol) {
+        alert('패턴 채우기는 같은 행 또는 열의 셀만 가능합니다.');
+        setIsFillDragging(false);
+        setFillStart(null);
+        setFillDirection(null);
+        setFillRange(new Set());
+        return;
+      }
+
+      const val1 = tableStructure.cells[selectedArray[0].row][selectedArray[0].col].content || '';
+      const val2 = tableStructure.cells[selectedArray[1].row][selectedArray[1].col].content || '';
+
+      // 자연수 체크
+      if (!isNaturalNumber(val1) || !isNaturalNumber(val2)) {
+        alert('패턴 채우기는 두 셀 모두 자연수(0 포함)여야 합니다.');
+        setIsFillDragging(false);
+        setFillStart(null);
+        setFillDirection(null);
+        setFillRange(new Set());
+        return;
+      }
+
+      const num1 = parseInt(val1);
+      const num2 = parseInt(val2);
+      const diff = num2 - num1;
+
+      // 등차수열로 채우기
+      const newCells = tableStructure.cells.map(row => [...row]);
+
+      // fillRange에서 선택된 2개 셀을 제외한 나머지 셀들만 채우기
+      const selectedSet = new Set(Array.from(selectedCells));
+      const fillTargets = cells.filter(cell => !selectedSet.has(`${cell.row}-${cell.col}`));
+
+      let currentValue = num2;
+      fillTargets.forEach(cell => {
+        currentValue += diff;
+        if (currentValue >= 0) { // 자연수 범위 유지
+          newCells[cell.row][cell.col] = {
+            ...newCells[cell.row][cell.col],
+            content: currentValue.toString()
+          };
+        }
+      });
+
+      onUpdate({
+        tableStructure: {
+          ...tableStructure,
+          cells: newCells
+        }
+      });
+    }
+
+    setIsFillDragging(false);
+    setFillStart(null);
+    setFillDirection(null);
+    setFillRange(new Set());
+  };
+
   return (
     <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
       {/* 테이블 크기 설정 */}
@@ -328,8 +504,14 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
       {/* 테이블 미리보기 및 편집 */}
       <div
         className="overflow-auto max-h-96 border rounded-md bg-white"
-        onMouseUp={handleDragEnd}
-        onMouseLeave={handleDragEnd}
+        onMouseUp={() => {
+          handleDragEnd();
+          handleFillEnd();
+        }}
+        onMouseLeave={() => {
+          handleDragEnd();
+          handleFillEnd();
+        }}
       >
         <table className="w-full border-collapse">
           <tbody>
@@ -342,13 +524,15 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                   const cellId = `${rowIndex}-${colIndex}`;
                   const isSelected = selectedCells.has(cellId);
 
+                  const isFillTarget = fillRange.has(cellId);
+
                   return (
                     <td
                       key={colIndex}
                       rowSpan={cell.rowSpan || 1}
                       colSpan={cell.colSpan || 1}
-                      className={`border border-gray-300 p-2 h-[76px] ${
-                        isSelected ? 'bg-blue-100' : cell.isHeader ? 'bg-gray-100 hover:bg-gray-50' : 'bg-white hover:bg-gray-50'
+                      className={`relative border border-gray-300 p-2 h-[76px] ${
+                        isFillTarget ? 'bg-blue-200' : isSelected ? 'bg-blue-100' : cell.isHeader ? 'bg-gray-100 hover:bg-gray-50' : 'bg-white hover:bg-gray-50'
                       } cursor-pointer select-none align-top`}
                       onClick={(e) => {
                         if (e.ctrlKey || e.metaKey) {
@@ -363,7 +547,10 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                           handleDragStart(rowIndex, colIndex);
                         }
                       }}
-                      onMouseOver={() => handleDragOver(rowIndex, colIndex)}
+                      onMouseOver={() => {
+                        handleDragOver(rowIndex, colIndex);
+                        handleFillOver(rowIndex, colIndex);
+                      }}
                     >
                       <textarea
                         value={cell.content || ''}
@@ -386,6 +573,16 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                           {cell.colSpan && cell.colSpan > 1 && ` 열병합: ${cell.colSpan}`}
                         </div>
                       ) : null}
+
+                      {/* Fill handle - Excel style */}
+                      {isSelected && (
+                        <div
+                          className="absolute bottom-0 right-0 w-[6px] h-[6px] bg-blue-600 cursor-crosshair hover:bg-blue-700"
+                          style={{ transform: 'translate(50%, 50%)' }}
+                          onMouseDown={(e) => handleFillStart(rowIndex, colIndex, e)}
+                          onMouseUp={handleFillEnd}
+                        />
+                      )}
                     </td>
                   );
                 })}
@@ -396,7 +593,7 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
       </div>
 
       <p className="text-xs text-gray-500">
-        💡 팁: 드래그로 영역 선택 | Ctrl+클릭으로 개별 셀 선택/해제 | 선택 후 병합 버튼 클릭
+        💡 팁: 드래그로 영역 선택 | Ctrl+클릭으로 개별 셀 선택/해제 | 선택 후 병합 버튼 클릭 | 우하단 파란 사각형 드래그로 빈칸 채우기 (Excel 스타일)
       </p>
     </div>
   );
