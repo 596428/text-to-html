@@ -390,6 +390,7 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
     doc.querySelectorAll('.resize-handle, .delete-btn').forEach(el => el.remove());
 
     // 2. 편집용 스타일 및 속성 제거 (outline, cursor, zIndex, contentEditable 등)
+    // + 브라우저 zoom 호환성을 위해 인라인 픽셀 스타일 제거
     doc.querySelectorAll('[data-editable="true"]').forEach(el => {
       const element = el as HTMLElement;
       element.style.outline = '';
@@ -398,6 +399,17 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       if (element.style.zIndex === '9999') {
         element.style.zIndex = '';
       }
+
+      // 브라우저 zoom 호환성: 편집 중 추가된 픽셀 스타일 제거
+      element.style.width = '';
+      element.style.height = '';
+      element.style.maxWidth = '';
+      element.style.maxHeight = '';
+      element.style.left = '';
+      element.style.top = '';
+      element.style.boxSizing = '';
+      // position: relative는 제거하지 않음 (원래 필요한 경우가 있음)
+
       // contentEditable 속성 제거
       element.contentEditable = 'false';
       element.removeAttribute('contenteditable');
