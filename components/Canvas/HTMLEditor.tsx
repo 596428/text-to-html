@@ -292,6 +292,12 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       // box-sizing 명시
       el.style.boxSizing = 'border-box';
 
+      // CSS Grid 위치 명시: row-start가 없으면 자동으로 추가 (col-start만 변경해도 위치 유지되도록)
+      if (!el.className.match(/row-start-\d+/)) {
+        // DOM 순서 기반으로 row-start 추가 (1부터 시작)
+        setRowStart(el, index + 1);
+      }
+
       el.style.cursor = 'move';
       el.style.outline = '2px dashed rgba(59, 130, 246, 0.5)';
       el.style.outlineOffset = '2px';
