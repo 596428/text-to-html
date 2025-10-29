@@ -4,6 +4,35 @@ import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
+/**
+ * 브라우저 zoom 호환성을 위해 인라인 픽셀 스타일 제거
+ * HTMLEditor의 드래그/리사이즈 기능이 추가한 width, height, left, top 등을 제거
+ */
+function removeInlinePixelStyles(html: string): string {
+  // DOM 파싱 없이 정규식으로 처리 (클라이언트 컴포넌트에서 JSDOM 사용 불가)
+  return html.replace(
+    /style="([^"]*)"/g,
+    (match, styleContent: string) => {
+      // style 속성 내용에서 제거할 속성들
+      const cleaned = styleContent
+        .replace(/position:\s*relative;?/gi, '')
+        .replace(/width:\s*\d+px;?/gi, '')
+        .replace(/max-width:\s*none;?/gi, '')
+        .replace(/height:\s*\d+px;?/gi, '')
+        .replace(/max-height:\s*none;?/gi, '')
+        .replace(/left:\s*-?\d+px;?/gi, '')
+        .replace(/top:\s*-?\d+px;?/gi, '')
+        .replace(/box-sizing:\s*border-box;?/gi, '')
+        .trim()
+        .replace(/;\s*;/g, ';') // 연속된 세미콜론 제거
+        .replace(/^;|;$/g, ''); // 앞뒤 세미콜론 제거
+
+      // 남은 스타일이 있으면 유지, 없으면 style 속성 전체 제거
+      return cleaned ? `style="${cleaned}"` : '';
+    }
+  ).replace(/\s+style=""\s*/g, ' '); // 빈 style 속성 제거
+}
+
 export default function PreviewToolbar() {
   const htmlVersions = useStore((state) => state.htmlVersions);
   const currentVersion = useStore((state) => state.currentVersion);
@@ -107,8 +136,11 @@ export default function PreviewToolbar() {
       }))
     };
 
+    // 브라우저 zoom 호환성을 위해 인라인 픽셀 스타일 제거
+    const cleanHTML = removeInlinePixelStyles(currentHTML);
+
     // HTML에 메타데이터 삽입
-    const htmlWithMetadata = currentHTML.replace(
+    const htmlWithMetadata = cleanHTML.replace(
       '</head>',
       `  <script type="application/json" id="layout-metadata">
 ${JSON.stringify(metadata, null, 2)}
