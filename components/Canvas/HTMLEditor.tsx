@@ -19,28 +19,6 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
   const currentHTML = htmlVersions.find((v) => v.version === currentVersion)?.html || '';
 
-  // inline px 스타일 제거 함수 (zoom 호환성을 위해)
-  const removeInlinePixelStyles = (html: string): string => {
-    return html.replace(
-      /style="([^"]*)"/g,
-      (match, styleContent: string) => {
-        const cleaned = styleContent
-          .replace(/position:\s*relative;?/gi, '')
-          .replace(/width:\s*\d+px;?/gi, '')
-          .replace(/max-width:\s*none;?/gi, '')
-          .replace(/height:\s*\d+px;?/gi, '')
-          .replace(/max-height:\s*none;?/gi, '')
-          .replace(/left:\s*-?\d+px;?/gi, '')
-          .replace(/top:\s*-?\d+px;?/gi, '')
-          .replace(/box-sizing:\s*border-box;?/gi, '')
-          .trim()
-          .replace(/;\s*;/g, ';')
-          .replace(/^;|;$/g, '');
-        return cleaned ? `style="${cleaned}"` : '';
-      }
-    ).replace(/\s+style=""\s*/g, ' ');
-  };
-
   // iframe 로드 핸들러
   const handleIframeLoad = () => {
     if (!iframeRef.current) {
@@ -440,11 +418,7 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
     });
 
     const updatedHTML = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
-
-    // inline px 스타일 제거 (zoom 호환성 유지)
-    const cleanedHTML = removeInlinePixelStyles(updatedHTML);
-
-    addVersion(cleanedHTML, '사용자가 HTML 요소를 직접 편집함 (이동/크기조정/삭제/텍스트수정/팝업편집)');
+    addVersion(updatedHTML, '사용자가 HTML 요소를 직접 편집함 (이동/크기조정/삭제/텍스트수정/팝업편집)');
     onComplete();
   };
 
