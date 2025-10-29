@@ -375,9 +375,10 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                         onFocus={() => setFocusedCell(cellId)}
                         onBlur={() => setFocusedCell(null)}
                         placeholder={`셀 (${rowIndex + 1}, ${colIndex + 1})`}
-                        className={`w-full p-1 text-xs border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded resize-none transition-all ${
-                          focusedCell === cellId ? 'h-[68px]' : 'h-[38px]'
-                        }`}
+                        style={{
+                          height: focusedCell === cellId ? '90%' : '50%'
+                        }}
+                        className="w-full p-1 text-xs border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded resize-none transition-all"
                       />
                       {(cell.rowSpan && cell.rowSpan > 1) || (cell.colSpan && cell.colSpan > 1) ? (
                         <div className="text-xs text-gray-500 mt-1">
