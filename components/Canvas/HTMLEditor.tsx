@@ -431,10 +431,19 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
         const currentColSpan = getColSpan(draggedElement);
         const newColStart = Math.max(1, Math.min(24 - currentColSpan + 1, currentColStart + gridsMoved));
 
-        // 상하 이동: 행 단위로 계산
-        // 박스 높이를 기준으로 행 이동 계산
+        // 상하 이동: 행 단위로 계산 (임계값 추가)
         const boxHeight = draggedElement.offsetHeight;
-        const rowsMoved = Math.round(deltaY / (boxHeight + 16)); // 16px는 gap-4
+        const minRowMoveDistance = (boxHeight + 16) * 0.5; // 박스 높이의 50% 이상 이동해야 행 변경
+
+        let rowsMoved = 0;
+        if (Math.abs(deltaY) >= minRowMoveDistance) {
+          // 좌우 이동이 더 지배적이면 상하 이동 무시
+          const isHorizontalDominant = Math.abs(deltaX) > Math.abs(deltaY) * 1.5;
+          if (!isHorizontalDominant) {
+            rowsMoved = Math.round(deltaY / (boxHeight + 16));
+          }
+        }
+
         const currentRowStart = getRowStart(draggedElement);
         const newRowStart = Math.max(1, currentRowStart + rowsMoved);
 
@@ -492,9 +501,19 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
           const currentColSpan = getColSpan(draggedElement);
           const newColStart = Math.max(1, Math.min(24 - currentColSpan + 1, currentColStart + gridsMoved));
 
-          // 상하 이동: row-start 값 변경
+          // 상하 이동: row-start 값 변경 (임계값 추가)
           const boxHeight = draggedElement.offsetHeight;
-          const rowsMoved = Math.round(deltaY / (boxHeight + 16));
+          const minRowMoveDistance = (boxHeight + 16) * 0.5; // 박스 높이의 50% 이상 이동해야 행 변경
+
+          let rowsMoved = 0;
+          if (Math.abs(deltaY) >= minRowMoveDistance) {
+            // 좌우 이동이 더 지배적이면 상하 이동 무시
+            const isHorizontalDominant = Math.abs(deltaX) > Math.abs(deltaY) * 1.5;
+            if (!isHorizontalDominant) {
+              rowsMoved = Math.round(deltaY / (boxHeight + 16));
+            }
+          }
+
           const currentRowStart = getRowStart(draggedElement);
           const newRowStart = Math.max(1, currentRowStart + rowsMoved);
 
