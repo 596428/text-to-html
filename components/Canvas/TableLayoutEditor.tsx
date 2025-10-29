@@ -350,9 +350,18 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                       className={`border border-gray-300 p-2 h-[76px] ${
                         isSelected ? 'bg-blue-100' : cell.isHeader ? 'bg-gray-100' : 'bg-white'
                       } cursor-pointer hover:bg-gray-50 select-none align-top`}
+                      onClick={(e) => {
+                        if (e.ctrlKey || e.metaKey) {
+                          e.stopPropagation();
+                          toggleCellSelection(rowIndex, colIndex);
+                        }
+                      }}
                       onMouseDown={(e) => {
                         e.stopPropagation();
-                        handleDragStart(rowIndex, colIndex);
+                        // Ctrl+클릭은 드래그 시작하지 않음
+                        if (!e.ctrlKey && !e.metaKey) {
+                          handleDragStart(rowIndex, colIndex);
+                        }
                       }}
                       onMouseOver={() => handleDragOver(rowIndex, colIndex)}
                     >
@@ -367,7 +376,7 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                         onBlur={() => setFocusedCell(null)}
                         placeholder={`셀 (${rowIndex + 1}, ${colIndex + 1})`}
                         className={`w-full p-1 text-xs border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded resize-none transition-all ${
-                          focusedCell === cellId ? 'min-h-[60px]' : 'min-h-[48px]'
+                          focusedCell === cellId ? 'h-[68px]' : 'h-[38px]'
                         }`}
                       />
                       {(cell.rowSpan && cell.rowSpan > 1) || (cell.colSpan && cell.colSpan > 1) ? (
@@ -386,7 +395,7 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
       </div>
 
       <p className="text-xs text-gray-500">
-        💡 팁: 셀을 드래그하여 선택 영역을 지정하세요. 단일 셀 선택은 해당 셀만 드래그하면 됩니다. 선택 후 병합 버튼을 클릭하세요.
+        💡 팁: 드래그로 영역 선택 | Ctrl+클릭으로 개별 셀 선택/해제 | 선택 후 병합 버튼 클릭
       </p>
     </div>
   );
