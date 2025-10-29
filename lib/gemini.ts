@@ -507,7 +507,14 @@ function mergeHtmlWithLoaded(generatedHtml: string, loadedBoxes: Box[], allBoxes
     .filter(content => content.length > 0)
     .join('\n');
 
-  // </body> 태그 앞에 불러온 HTML 삽입
+  // Grid 내부에 불러온 HTML 삽입 (container 안에 위치하도록)
+  // 패턴: </div>\s*</div>\s*</body> 를 찾아서 첫 번째 </div> 앞에 삽입
+  const gridClosePattern = /(<\/div>\s*<\/div>\s*<\/body>)/;
+  if (gridClosePattern.test(generatedHtml)) {
+    return generatedHtml.replace(gridClosePattern, `${loadedContent}\n$1`);
+  }
+
+  // Fallback: 기존 방식 (grid가 없는 경우)
   return generatedHtml.replace('</body>', `${loadedContent}\n</body>`);
 }
 
