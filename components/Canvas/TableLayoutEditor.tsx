@@ -12,6 +12,7 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{row: number, col: number} | null>(null);
+  const [focusedCell, setFocusedCell] = useState<string | null>(null);
 
   // 초기 테이블 구조 생성
   const initializeTable = (rows: number, cols: number): TableStructure => {
@@ -346,9 +347,15 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                         isSelected ? 'bg-blue-100' : cell.isHeader ? 'bg-gray-100' : 'bg-white'
                       } cursor-pointer hover:bg-gray-50 select-none`}
                       onClick={() => toggleCellSelection(rowIndex, colIndex)}
-                      onMouseDown={() => handleDragStart(rowIndex, colIndex)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleDragStart(rowIndex, colIndex);
+                      }}
                       onMouseEnter={() => handleDragOver(rowIndex, colIndex)}
-                      onMouseUp={handleDragEnd}
+                      onMouseUp={(e) => {
+                        e.stopPropagation();
+                        handleDragEnd();
+                      }}
                     >
                       <textarea
                         value={cell.content || ''}
@@ -356,8 +363,13 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
                         onMouseMove={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                        onFocus={() => setFocusedCell(cellId)}
+                        onBlur={() => setFocusedCell(null)}
                         placeholder={`셀 (${rowIndex + 1}, ${colIndex + 1})`}
-                        className="w-full min-h-[60px] p-1 text-xs border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded resize-none"
+                        className={`w-full p-1 text-xs border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded resize-none transition-all ${
+                          focusedCell === cellId ? 'min-h-[60px]' : 'min-h-[48px]'
+                        }`}
                       />
                       {(cell.rowSpan && cell.rowSpan > 1) || (cell.colSpan && cell.colSpan > 1) ? (
                         <div className="text-xs text-gray-500 mt-1">
