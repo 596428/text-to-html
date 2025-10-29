@@ -91,6 +91,25 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
     let startWidth = 0;
     let startHeight = 0;
 
+    // 그리드 기반 이동을 위한 헬퍼 함수
+    const getColStart = (el: HTMLElement): number => {
+      const match = el.className.match(/col-start-(\d+)/);
+      return match ? parseInt(match[1]) : 1;
+    };
+
+    const getColSpan = (el: HTMLElement): number => {
+      const match = el.className.match(/col-span-(\d+)/);
+      return match ? parseInt(match[1]) : 1;
+    };
+
+    const setColStart = (el: HTMLElement, value: number) => {
+      el.className = el.className.replace(/col-start-\d+/, `col-start-${value}`);
+    };
+
+    const getGridContainer = (): HTMLElement | null => {
+      return doc.querySelector('.grid.grid-cols-24') as HTMLElement;
+    };
+
     // 현재 선택된 요소의 컨트롤 제거
     const removeControls = () => {
       doc.querySelectorAll('.resize-handle, .delete-btn').forEach(el => el.remove());
@@ -331,12 +350,36 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
 
     // mousemove - 드래그 또는 리사이즈
     doc.addEventListener('mousemove', (e: MouseEvent) => {
-      // 드래그 중
+      // 드래그 중 - 그리드 기반 이동
       if (draggedElement && !resizingElement) {
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
-        draggedElement.style.left = `${startLeft + deltaX}px`;
-        draggedElement.style.top = `${startTop + deltaY}px`;
+
+        const gridContainer = getGridContainer();
+        if (!gridContainer) return;
+
+        const containerWidth = gridContainer.offsetWidth;
+        const gridWidth = containerWidth / 24; // 24그리드
+
+        // 좌우 이동: 그리드 단위로 계산
+        const gridsMoved = Math.round(deltaX / gridWidth);
+        const currentColStart = getColStart(draggedElement);
+        const currentColSpan = getColSpan(draggedElement);
+
+        // 새 위치 계산 (1~24 범위 제한)
+        const newColStart = Math.max(1, Math.min(24 - currentColSpan + 1, currentColStart + gridsMoved));
+
+        // 시각적 피드백을 위해 임시로 transform 사용 (저장 시 제거됨)
+        const actualGridsMoved = newColStart - currentColStart;
+        const visualOffsetX = actualGridsMoved * gridWidth;
+        draggedElement.style.transform = `translate(${visualOffsetX}px, ${deltaY}px)`;
+
+        // 상하 이동 방향 표시
+        if (Math.abs(deltaY) > 30) {
+          draggedElement.style.opacity = '0.7';
+        } else {
+          draggedElement.style.opacity = '1';
+        }
       }
 
       // 리사이즈 중
@@ -362,10 +405,53 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
     });
 
     // mouseup - 드래그/리사이즈 종료
-    doc.addEventListener('mouseup', () => {
+    doc.addEventListener('mouseup', (e: MouseEvent) => {
       if (draggedElement) {
-        const sectionId = draggedElement.getAttribute('data-section-id');
-        setDebugInfo(`✅ 이동 완료: ${sectionId} → (${draggedElement.style.left}, ${draggedElement.style.top})`);
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        const gridContainer = getGridContainer();
+        if (gridContainer) {
+          const containerWidth = gridContainer.offsetWidth;
+          const gridWidth = containerWidth / 24;
+
+          // 좌우 이동: col-start 값 변경
+          const gridsMoved = Math.round(deltaX / gridWidth);
+          const currentColStart = getColStart(draggedElement);
+          const currentColSpan = getColSpan(draggedElement);
+          const newColStart = Math.max(1, Math.min(24 - currentColSpan + 1, currentColStart + gridsMoved));
+
+          if (newColStart !== currentColStart) {
+            setColStart(draggedElement, newColStart);
+            setDebugInfo(`✅ 좌우 이동: ${currentColStart} → ${newColStart} 그리드`);
+          }
+
+          // 상하 이동: DOM 순서 변경
+          if (Math.abs(deltaY) > 30) {
+            const allBoxes = Array.from(doc.querySelectorAll('[data-editable="true"]')) as HTMLElement[];
+            const currentIndex = allBoxes.indexOf(draggedElement);
+
+            if (deltaY > 0 && currentIndex < allBoxes.length - 1) {
+              // 아래로 이동
+              const nextBox = allBoxes[currentIndex + 1];
+              if (gridContainer && nextBox) {
+                gridContainer.insertBefore(draggedElement, nextBox.nextSibling);
+                setDebugInfo(`✅ 아래로 이동`);
+              }
+            } else if (deltaY < 0 && currentIndex > 0) {
+              // 위로 이동
+              const prevBox = allBoxes[currentIndex - 1];
+              if (gridContainer && prevBox) {
+                gridContainer.insertBefore(draggedElement, prevBox);
+                setDebugInfo(`✅ 위로 이동`);
+              }
+            }
+          }
+        }
+
+        // 시각적 피드백 제거
+        draggedElement.style.transform = '';
+        draggedElement.style.opacity = '1';
         draggedElement = null;
       }
 
@@ -410,6 +496,10 @@ export default function HTMLEditor({ onComplete }: HTMLEditorProps) {
       // (Tailwind grid의 col-start/col-span이 비율 기반이므로)
       element.style.left = '';
       element.style.top = '';
+
+      // 그리드 기반 이동 시 사용된 임시 스타일 제거
+      element.style.transform = '';
+      element.style.opacity = '';
 
       // width, height은 유지 (사용자가 변경한 크기)
       // position: relative도 유지
