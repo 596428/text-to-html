@@ -73,10 +73,39 @@ export default function Home() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* v2.2.4 */}
+              {/* v2.2.41 */}
               <div className="border-l-4 border-blue-600 pl-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.4</h3>
-                <p className="text-sm text-gray-500 mb-4">2025.10.29</p>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.41</h3>
+                <p className="text-sm text-gray-500 mb-4">2025.10.30</p>
+
+                <div className="space-y-4">
+                  {/* Table 레이아웃 개선 */}
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-2">📊 Table 레이아웃 개선</h4>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold">•</span>
+                        <div>
+                          <strong>복사-붙여넣기 기능 (Ctrl+C/V)</strong>
+                          <p className="text-gray-600 mt-1">Excel과 완전히 호환되는 복사-붙여넣기 기능입니다. 내부 테이블 간, Excel↔테이블 간 자유롭게 데이터를 복사할 수 있습니다. 1×1, N×1, 1×N, N×M 모든 형태 지원.</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold">•</span>
+                        <div>
+                          <strong>일괄 삭제 기능 (Delete/Backspace)</strong>
+                          <p className="text-gray-600 mt-1">여러 셀을 선택한 후 Delete 또는 Backspace 키를 누르면 선택된 모든 셀의 내용이 한 번에 삭제됩니다.</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* v2.2.4 */}
+              <div className="border-l-4 border-gray-400 pl-4">
+                <h3 className="text-lg font-bold text-gray-600 mb-2">version 2.2.4</h3>
+                <p className="text-sm text-gray-400 mb-4">2025.10.29</p>
 
                 <div className="space-y-4">
                   {/* Table 레이아웃 개선 */}
