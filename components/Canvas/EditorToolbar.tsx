@@ -38,16 +38,74 @@ export default function EditorToolbar() {
     const startTime = performance.now();
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boxes }),
-        signal: controller.signal // AbortController 시그널 추가
-      });
+      // 이미지가 있는지 확인
+      const hasImages = boxes.some(box => box.images && box.images.length > 0);
+
+      let response;
+
+      if (hasImages) {
+        // FormData로 이미지 + 박스 정보 전송
+        const formData = new FormData();
+
+        // 박스 정보는 JSON 문자열로 변환 (images 제외)
+        const boxesWithoutFiles = boxes.map(box => {
+          if (box.images && box.images.length > 0) {
+            // images 속성을 제거한 박스 복사본 생성
+            const { images, ...boxWithoutImages } = box;
+            return { ...boxWithoutImages, images: box.images.map(() => ({})) }; // 개수만 유지
+          }
+          return box;
+        });
+
+        formData.append('boxes', JSON.stringify(boxesWithoutFiles));
+
+        // 이미지 파일 추가
+        boxes.forEach((box) => {
+          if (box.images && box.images.length > 0) {
+            box.images.forEach((img, idx) => {
+              formData.append(`image_${box.id}_${idx}`, img.file);
+            });
+          }
+        });
+
+        response = await fetch('/api/generate', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+        });
+      } else {
+        // JSON으로 박스 정보만 전송 (기존 방식)
+        response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ boxes }),
+          signal: controller.signal
+        });
+      }
+
+      // 응답이 JSON인지 확인
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // HTML 또는 기타 형식 응답 (타임아웃 에러 등)
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+
+        let errorMessage = '';
+        if (response.status === 524) {
+          errorMessage = `HTML 생성에 실패하였습니다: 요청 시간 초과 (524)\n\n이미지 크기를 줄이거나 더 간단한 이미지를 사용해주세요.`;
+        } else {
+          errorMessage = `HTML 생성에 실패하였습니다: 서버 응답 오류 (${response.status})\n\n잠시 후 다시 시도해주세요.`;
+        }
+
+        alert(errorMessage);
+        setError(errorMessage.split('\n\n')[0]); // 첫 줄만 에러 메시지로
+        return;
+      }
 
       const data = await response.json();
 
       if (data.error) {
+        alert(`HTML 생성에 실패하였습니다: ${data.error}`);
         setError(data.error);
       } else {
         const endTime = performance.now();

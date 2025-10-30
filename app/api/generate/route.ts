@@ -7,7 +7,37 @@ export const maxDuration = 300; // 5분 (Gemini API 복잡한 HTML 생성 대기
 
 export async function POST(request: NextRequest) {
   try {
-    const { boxes }: { boxes: Box[] } = await request.json();
+    const contentType = request.headers.get('content-type');
+    let boxes: Box[];
+    let imageFiles: { [boxId: string]: File[] } = {};
+
+    // Content-Type에 따라 파싱 방식 결정
+    if (contentType?.includes('multipart/form-data')) {
+      // FormData로 이미지 + 박스 정보 받기
+      const formData = await request.formData();
+      const boxesJson = formData.get('boxes') as string;
+      boxes = JSON.parse(boxesJson);
+
+      // 각 박스별 이미지 파일 추출
+      boxes.forEach((box) => {
+        if (box.images && box.images.length > 0) {
+          const files: File[] = [];
+          box.images.forEach((_, idx) => {
+            const file = formData.get(`image_${box.id}_${idx}`) as File;
+            if (file) {
+              files.push(file);
+            }
+          });
+          if (files.length > 0) {
+            imageFiles[box.id] = files;
+          }
+        }
+      });
+    } else {
+      // JSON으로 박스 정보만 받기 (이미지 없는 경우)
+      const data = await request.json();
+      boxes = data.boxes;
+    }
 
     // 박스 검증
     if (!boxes || boxes.length === 0) {
@@ -17,8 +47,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gemini API로 HTML 생성
-    const generatedHTML = await generateHTML(boxes);
+    // Gemini API로 HTML 생성 (이미지 파일 포함)
+    const generatedHTML = await generateHTML(boxes, imageFiles);
 
     // DOM 파싱하여 data-section-id에 UUID 삽입
     const dom = new JSDOM(generatedHTML);

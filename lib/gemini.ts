@@ -33,7 +33,7 @@ function getGenAI() {
 
 // ============ HTML 생성 ============
 
-export async function generateHTML(boxes: Box[]): Promise<string> {
+export async function generateHTML(boxes: Box[], imageFiles: { [boxId: string]: File[] } = {}): Promise<string> {
   // 1단계: 불러오기 박스를 분리하고 HTML 수집
   const loadedBoxes = boxes.filter(box => box.layoutType === 'loaded' && box.loadedHtml);
   const generateBoxes = boxes.filter(box => box.layoutType !== 'loaded' || !box.loadedHtml);
@@ -114,8 +114,15 @@ ${box.children.map((child, j) => `  ${j + 1}. ${child.content || '(설명 없음
 - **추가 요구사항**: ${box.tableDescription}`;
     }
   } else {
-    boxDescription += `
+    // 이미지가 있는 경우 이미지 분석 지시 추가
+    const hasBoxImages = imageFiles[box.id] && imageFiles[box.id].length > 0;
+    if (hasBoxImages) {
+      boxDescription += `
+- **요구사항**: 첨부된 이미지를 분석하여 그대로 재현하는 HTML을 생성하세요. 이미지의 레이아웃, 텍스트, 색상, 스타일을 최대한 정확하게 복원하세요. ${box.content}`;
+    } else {
+      boxDescription += `
 - **요구사항**: ${box.content || '(설명 없음)'}`;
+    }
   }
 
   // 팝업 처리
@@ -270,7 +277,57 @@ ${box.popupContent || '팝업 기본 내용'}`;
   logHTMLGeneration(boxes, prompt);
 
   try {
-    const result = await model.generateContent(prompt);
+    // 이미지가 있는지 확인
+    const hasImages = generateBoxes.some(box =>
+      imageFiles[box.id] && imageFiles[box.id].length > 0
+    );
+
+    let result;
+
+    if (hasImages) {
+      // 멀티모달: 이미지 + 텍스트 전송
+      const parts: any[] = [{ text: prompt }];
+
+      // 각 박스의 이미지를 base64로 변환하여 추가
+      for (const box of generateBoxes) {
+        const files = imageFiles[box.id];
+        if (files && files.length > 0) {
+          for (const file of files) {
+            // Next.js FormData에서 받은 파일 처리
+            let buffer: Buffer;
+
+            // arrayBuffer 메서드가 있는 경우 (Blob/File)
+            if (typeof file.arrayBuffer === 'function') {
+              const bytes = await file.arrayBuffer();
+              buffer = Buffer.from(bytes);
+            }
+            // 이미 Buffer인 경우
+            else if (Buffer.isBuffer(file)) {
+              buffer = file;
+            }
+            // 기타: text()로 받아서 Buffer로 변환
+            else {
+              const text = await (file as any).text();
+              buffer = Buffer.from(text, 'binary');
+            }
+
+            const base64 = buffer.toString('base64');
+
+            parts.push({
+              inlineData: {
+                mimeType: file.type || 'image/jpeg',
+                data: base64
+              }
+            });
+          }
+        }
+      }
+
+      result = await model.generateContent({ contents: [{ parts }] });
+    } else {
+      // 텍스트만 전송 (기존 방식)
+      result = await model.generateContent(prompt);
+    }
 
     if (!result || !result.response) {
       throw new Error('Gemini API로부터 응답을 받지 못했습니다.');

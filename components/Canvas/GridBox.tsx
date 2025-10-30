@@ -176,16 +176,130 @@ export default function GridBox({ box }: GridBoxProps) {
           </select>
         </div>
 
-        {/* Simple 레이아웃: 텍스트 입력 */}
+        {/* Simple 레이아웃: 텍스트 + 이미지 입력 */}
         {(!box.layoutType || box.layoutType === 'simple') && (
-          <textarea
-            value={box.content}
-            onChange={(e) => updateBox(box.id, { content: e.target.value })}
+          <div
+            className="flex-1 flex flex-col gap-2"
             onClick={(e) => e.stopPropagation()}
-            placeholder={PLACEHOLDERS.BOX_CONTENT}
-            className="flex-1 w-full p-2 border border-gray-200 rounded resize-none
-                       focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-          />
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.currentTarget.classList.add('bg-blue-50', 'border-2', 'border-blue-300', 'border-dashed');
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.currentTarget.classList.remove('bg-blue-50', 'border-2', 'border-blue-300', 'border-dashed');
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.currentTarget.classList.remove('bg-blue-50', 'border-2', 'border-blue-300', 'border-dashed');
+
+              const files = Array.from(e.dataTransfer.files).filter(file =>
+                file.type.startsWith('image/')
+              );
+
+              if (files.length === 0) {
+                alert('이미지 파일만 업로드 가능합니다.');
+                return;
+              }
+
+              const file = files[0]; // 첫 번째 파일만 사용
+
+              // 파일 크기 체크 (4MB)
+              if (file.size > 4 * 1024 * 1024) {
+                alert('이미지 크기는 4MB 이하여야 합니다.');
+                return;
+              }
+
+              // 미리보기 URL 생성
+              const preview = URL.createObjectURL(file);
+              const currentImages = box.images || [];
+
+              updateBox(box.id, {
+                images: [...currentImages, { file, preview }]
+              });
+            }}
+          >
+            {/* 텍스트 입력 영역 */}
+            <div className="flex gap-2">
+              {/* 이미지 추가 버튼 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jpg,.jpeg,.png,.webp';
+                  input.multiple = false;
+                  input.onchange = async (event) => {
+                    const file = (event.target as HTMLInputElement).files?.[0];
+                    if (!file) return;
+
+                    // 파일 크기 체크 (4MB)
+                    if (file.size > 4 * 1024 * 1024) {
+                      alert('이미지 크기는 4MB 이하여야 합니다.');
+                      return;
+                    }
+
+                    // 미리보기 URL 생성
+                    const preview = URL.createObjectURL(file);
+                    const currentImages = box.images || [];
+
+                    updateBox(box.id, {
+                      images: [...currentImages, { file, preview }]
+                    });
+                  };
+                  input.click();
+                }}
+                className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded border border-gray-300
+                           font-semibold text-sm transition-colors whitespace-nowrap"
+                title="이미지 추가"
+              >
+                + 📷
+              </button>
+
+              <textarea
+                value={box.content}
+                onChange={(e) => updateBox(box.id, { content: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                placeholder={PLACEHOLDERS.BOX_CONTENT}
+                className="flex-1 p-2 border border-gray-200 rounded resize-none
+                           focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                style={{ minHeight: '80px' }}
+              />
+            </div>
+
+            {/* 이미지 미리보기 영역 */}
+            {box.images && box.images.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded">
+                {box.images.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={img.preview}
+                      alt={`Preview ${idx + 1}`}
+                      className="w-20 h-20 object-cover rounded border border-gray-300"
+                    />
+                    {/* 삭제 버튼 */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        URL.revokeObjectURL(img.preview); // 메모리 해제
+                        const newImages = box.images?.filter((_, i) => i !== idx);
+                        updateBox(box.id, { images: newImages });
+                      }}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600
+                                 text-white rounded-full text-xs font-bold
+                                 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="이미지 삭제"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Flex 레이아웃: FlexLayoutEditor */}

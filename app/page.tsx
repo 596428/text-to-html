@@ -29,7 +29,7 @@ export default function Home() {
             >
               {showChat ? '💬 챗봇 숨기기' : '💬 챗봇 표시'}
             </button>
-            <div className="text-sm opacity-90">version 2.2.41</div>
+            <div className="text-sm opacity-90">version 2.2.42</div>
           </div>
         </div>
       </header>
@@ -73,8 +73,49 @@ export default function Home() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* v2.2.41 */}
+              {/* v2.2.42 */}
               <div className="border-l-4 border-blue-600 pl-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.42 (Beta)</h3>
+                <p className="text-sm text-gray-500 mb-4">2025.10.30</p>
+
+                <div className="space-y-4">
+                  {/* 멀티모달 기능 */}
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-2">🖼️ 이미지 업로드 기능 (Beta)</h4>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold">•</span>
+                        <div>
+                          <strong>이미지 기반 HTML 생성</strong>
+                          <p className="text-gray-600 mt-1">Simple 레이아웃에서 이미지를 업로드하여 Gemini AI가 이미지를 분석하고 HTML로 재현합니다. + 📷 버튼을 클릭하거나 이미지를 드래그&드롭하세요.</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold">•</span>
+                        <div>
+                          <strong>텍스트 설명 추가 가능</strong>
+                          <p className="text-gray-600 mt-1">이미지 업로드 후 텍스트 박스에 추가 설명이나 요청사항을 작성하면 이미지와 함께 반영됩니다.</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* 주의사항 */}
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <h4 className="font-semibold text-yellow-800 mb-2">⚠️ 주의사항</h4>
+                    <ul className="space-y-1 text-sm text-yellow-700">
+                      <li><strong>지원 포맷:</strong> JPG, JPEG, PNG, WEBP</li>
+                      <li><strong>파일 크기:</strong> 최대 4MB (초과 시 업로드 불가)</li>
+                      <li><strong>큰 이미지:</strong> 지나치게 큰 화면의 이미지는 생성 실패 가능 (개선 작업 중)</li>
+                      <li><strong>결과 일관성:</strong> 같은 이미지로 여러 번 생성 시 결과물에 차이가 있을 수 있음 (AI 특성)</li>
+                      <li><strong>Beta 기능:</strong> 현재 안정성 개선 및 성능 최적화 작업 진행 중</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* v2.2.41 */}
+              <div className="border-l-4 border-gray-400 pl-4">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.41</h3>
                 <p className="text-sm text-gray-500 mb-4">2025.10.30</p>
 

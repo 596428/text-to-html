@@ -58,6 +58,9 @@ export interface Box {
 
   // 배율 조정 (컴포넌트 재생성용)
   scalePercentage?: number;     // 50 ~ 200 (기본값: 100)
+
+  // 멀티모달 - 이미지 첨부 (Phase 6 사용)
+  images?: { file: File; preview: string }[];  // 업로드된 이미지 파일 + 미리보기 URL
 }
 
 export interface HTMLVersion {
