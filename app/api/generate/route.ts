@@ -7,6 +7,13 @@ export const maxDuration = 300; // 5분 (Gemini API 복잡한 HTML 생성 대기
 
 export async function POST(request: NextRequest) {
   try {
+    // 요청 IP 추출
+    const requestIp =
+      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('cf-connecting-ip') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
     const contentType = request.headers.get('content-type');
     let boxes: Box[];
     let imageFiles: { [boxId: string]: File[] } = {};
@@ -47,8 +54,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gemini API로 HTML 생성 (이미지 파일 포함)
-    const generatedHTML = await generateHTML(boxes, imageFiles);
+    // 클라이언트 취소 감지 설정
+    let cancelled = false;
+    request.signal.addEventListener('abort', () => {
+      cancelled = true;
+      console.log(`[Client Cancelled] IP: ${requestIp}`);
+    });
+
+    // Gemini API로 HTML 생성 (이미지 파일 + IP 전달)
+    const generatedHTML = await generateHTML(boxes, imageFiles, requestIp, request.signal);
 
     // DOM 파싱하여 data-section-id에 UUID 삽입
     const dom = new JSDOM(generatedHTML);

@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { JSDOM } from 'jsdom';
 import { Box } from '@/types';
 import { logHTMLGeneration, logHTMLModification } from '@/lib/logger';
+import { logGeminiUsage } from '@/lib/mongodb-usage-logger';
 
 // ============ API 키 관리 (순환 사용) ============
 
@@ -20,30 +21,33 @@ const API_KEYS = [
 
 let currentKeyIndex = 0;
 
-function getGenAI() {
+function getGenAI(): { genAI: GoogleGenerativeAI; keyNumber: string } {
   if (API_KEYS.length === 0) {
     throw new Error('Gemini API 키가 설정되지 않았습니다. docs/API-KEYS-GUIDE.md를 참조하세요.');
   }
 
   const key = API_KEYS[currentKeyIndex];
-  console.log(`[Gemini] Using API Key #${currentKeyIndex + 1}/${API_KEYS.length}`);
+  const keyNumber = `${currentKeyIndex + 1}`;
+  console.log(`[Gemini] Using API Key #${keyNumber}/${API_KEYS.length}`);
   currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-  return new GoogleGenerativeAI(key);
+  return { genAI: new GoogleGenerativeAI(key), keyNumber };
 }
 
 // ============ HTML 생성 ============
 
-export async function generateHTML(boxes: Box[], imageFiles: { [boxId: string]: File[] } = {}): Promise<string> {
+export async function generateHTML(boxes: Box[], imageFiles: { [boxId: string]: File[] } = {}, requestIp: string = 'unknown', signal?: AbortSignal): Promise<string> {
   // 1단계: 불러오기 박스를 분리하고 HTML 수집
   const loadedBoxes = boxes.filter(box => box.layoutType === 'loaded' && box.loadedHtml);
   const generateBoxes = boxes.filter(box => box.layoutType !== 'loaded' || !box.loadedHtml);
 
   // 2단계: 생성이 필요한 박스만 Gemini로 처리
   let generatedHtml = '';
+  let keyNumber: string = 'unknown'; // 로깅용 API 키 번호
 
   if (generateBoxes.length > 0) {
-    const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const apiInfo = getGenAI();
+    keyNumber = apiInfo.keyNumber;
+    const model = apiInfo.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // 팝업 정보 및 Flex 레이아웃 포함
     const prompt = `
@@ -118,7 +122,8 @@ ${box.children.map((child, j) => `  ${j + 1}. ${child.content || '(설명 없음
     const hasBoxImages = imageFiles[box.id] && imageFiles[box.id].length > 0;
     if (hasBoxImages) {
       boxDescription += `
-- **요구사항**: 첨부된 이미지를 분석하여 그대로 재현하는 HTML을 생성하세요. 이미지의 레이아웃, 텍스트, 색상, 스타일을 최대한 정확하게 복원하세요. ${box.content}`;
+- **요구사항**: 첨부된 이미지를 분석하여 그대로 재현하는 HTML을 생성하세요. 이미지의 레이아웃, 텍스트, 색상, 스타일을 최대한 정확하게 복원하세요. ${box.content}
+- **⚠️ 중요**: 이 영역의 최상위 컨테이너는 **반드시 "col-span-${box.width}"** 클래스를 사용하세요. 다른 값(col-span-6, col-span-12 등)을 사용하지 마세요.`;
     } else {
       boxDescription += `
 - **요구사항**: ${box.content || '(설명 없음)'}`;
@@ -276,6 +281,18 @@ ${box.popupContent || '팝업 기본 내용'}`;
   // 로그 저장 (프로토타입 개발용)
   logHTMLGeneration(boxes, prompt);
 
+  // 클라이언트 취소 감지
+  if (signal?.aborted) {
+    await logGeminiUsage({
+      requestIp,
+      timestamp: new Date(),
+      isError: true,
+      errorMessage: 'Client cancelled request before API call',
+      apiKeyUsed: keyNumber
+    });
+    throw new Error('요청이 취소되었습니다.');
+  }
+
   try {
     // 이미지가 있는지 확인
     const hasImages = generateBoxes.some(box =>
@@ -323,10 +340,27 @@ ${box.popupContent || '팝업 기본 내용'}`;
         }
       }
 
-      result = await model.generateContent({ contents: [{ parts }] });
+      result = await model.generateContent({ contents: [{ role: 'user', parts }] });
     } else {
       // 텍스트만 전송 (기존 방식)
       result = await model.generateContent(prompt);
+    }
+
+    // API 호출 후 취소 감지
+    if (signal?.aborted) {
+      await logGeminiUsage({
+        requestIp,
+        timestamp: new Date(),
+        isError: true,
+        errorMessage: 'Client cancelled request after API call',
+        tokenUsage: result?.response?.usageMetadata ? {
+          promptTokens: result.response.usageMetadata.promptTokenCount || 0,
+          candidatesTokens: result.response.usageMetadata.candidatesTokenCount || 0,
+          totalTokens: result.response.usageMetadata.totalTokenCount || 0
+        } : undefined,
+        apiKeyUsed: keyNumber
+      });
+      throw new Error('요청이 취소되었습니다.');
     }
 
     if (!result || !result.response) {
@@ -346,8 +380,31 @@ ${box.popupContent || '팝업 기본 내용'}`;
     html = integratePopupContent(html, generateBoxes);
 
     generatedHtml = html.trim();
+
+    // ✅ 성공 로깅
+    const usageMetadata = result.response.usageMetadata;
+    await logGeminiUsage({
+      requestIp,
+      timestamp: new Date(),
+      isError: false,
+      tokenUsage: usageMetadata ? {
+        promptTokens: usageMetadata.promptTokenCount || 0,
+        candidatesTokens: usageMetadata.candidatesTokenCount || 0,
+        totalTokens: usageMetadata.totalTokenCount || 0
+      } : undefined,
+      apiKeyUsed: keyNumber
+    });
   } catch (error: any) {
     console.error('[generateHTML] Error:', error);
+
+    // ❌ 에러 로깅
+    await logGeminiUsage({
+      requestIp,
+      timestamp: new Date(),
+      isError: true,
+      errorMessage: error.message || 'Unknown error',
+      apiKeyUsed: keyNumber
+    });
 
     // 사용자 친화적인 에러 메시지
     if (error.message?.includes('429') || error.message?.includes('quota')) {
@@ -579,10 +636,12 @@ function mergeHtmlWithLoaded(generatedHtml: string, loadedBoxes: Box[], allBoxes
 
 export async function modifyHTML(
   currentHTML: string,
-  userRequest: string
+  userRequest: string,
+  requestIp: string = 'unknown'
 ): Promise<string> {
-  const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const apiInfo = getGenAI();
+  const keyNumber = apiInfo.keyNumber;
+  const model = apiInfo.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
 당신은 HTML 수정 전문가입니다.
@@ -609,12 +668,39 @@ ${currentHTML}
   // 로그 저장 (프로토타입 개발용)
   logHTMLModification(currentHTML, userRequest, prompt);
 
-  const result = await model.generateContent(prompt);
-  let html = result.response.text();
+  try {
+    const result = await model.generateContent(prompt);
+    let html = result.response.text();
 
-  html = html.replace(/^```html?\n?/i, '').replace(/\n?```$/, '');
+    html = html.replace(/^```html?\n?/i, '').replace(/\n?```$/, '');
 
-  return html.trim();
+    // ✅ 성공 로깅
+    const usageMetadata = result.response.usageMetadata;
+    await logGeminiUsage({
+      requestIp,
+      timestamp: new Date(),
+      isError: false,
+      tokenUsage: usageMetadata ? {
+        promptTokens: usageMetadata.promptTokenCount || 0,
+        candidatesTokens: usageMetadata.candidatesTokenCount || 0,
+        totalTokens: usageMetadata.totalTokenCount || 0
+      } : undefined,
+      apiKeyUsed: keyNumber
+    });
+
+    return html.trim();
+  } catch (error: any) {
+    // ❌ 에러 로깅
+    await logGeminiUsage({
+      requestIp,
+      timestamp: new Date(),
+      isError: true,
+      errorMessage: error.message || 'Unknown error',
+      apiKeyUsed: keyNumber
+    });
+
+    throw error;
+  }
 }
 
 // ============ 재시도 로직 (429 에러 대응) ============

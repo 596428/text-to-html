@@ -9,6 +9,7 @@ import { generateSectionId } from '@/lib/uuid';
 export default function EditorToolbar() {
   const boxes = useStore((state) => state.boxes);
   const addBox = useStore((state) => state.addBox);
+  const updateBox = useStore((state) => state.updateBox);
   const clearBoxes = useStore((state) => state.clearBoxes);
   const setBoxes = useStore((state) => state.setBoxes);
   const setCanvasMode = useStore((state) => state.setCanvasMode);
@@ -114,6 +115,17 @@ export default function EditorToolbar() {
 
         const prompt = boxes.map((b) => `[${b.width}컬럼] ${b.content}`).join('\n');
         addVersion(data.html, prompt);
+
+        // HTML 생성 성공 후 모든 이미지 Blob URL 해제 및 제거
+        boxes.forEach(box => {
+          if (box.images && box.images.length > 0) {
+            box.images.forEach(img => {
+              URL.revokeObjectURL(img.preview);
+            });
+            updateBox(box.id, { images: [] });
+          }
+        });
+
         setCanvasMode('preview'); // 자동으로 프리뷰 모드로 전환
       }
     } catch (error: any) {

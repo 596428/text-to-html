@@ -131,13 +131,25 @@ export const useStore = create<AppState>()(
         name: 'text-to-html-storage',
         version: 1, // 버전 추가 (향후 마이그레이션 추적용)
         partialize: (state) => ({
-          boxes: state.boxes,
+          // images 속성 제거: File 객체와 Blob URL은 직렬화 불가능하므로 제외
+          boxes: state.boxes.map(box => {
+            const { images, ...boxWithoutImages } = box;
+            return boxWithoutImages;
+          }),
           htmlVersions: state.htmlVersions,
           currentVersion: state.currentVersion
         }),
         // 스토리지에서 읽어올 때 마이그레이션 적용
         migrate: (persistedState: any, version: number) => {
           const migrated = migrateState(persistedState);
+
+          // images 속성 제거 (복원 시 안전성 보장)
+          if (migrated.boxes) {
+            migrated.boxes = migrated.boxes.map((box: any) => {
+              const { images, ...boxWithoutImages } = box;
+              return boxWithoutImages;
+            });
+          }
 
           // 30개 초과 버전 정리 (기존 사용자 대응)
           if (migrated.htmlVersions && migrated.htmlVersions.length > 30) {

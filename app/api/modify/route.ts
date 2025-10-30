@@ -5,6 +5,13 @@ export const maxDuration = 300; // 5분 (Gemini API 복잡한 HTML 수정 대기
 
 export async function POST(request: NextRequest) {
   try {
+    // 요청 IP 추출
+    const requestIp =
+      request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      request.headers.get('cf-connecting-ip') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
     const { currentHTML, userRequest }: { currentHTML: string; userRequest: string } = await request.json();
 
     // 입력 검증
@@ -22,8 +29,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gemini API로 HTML 수정
-    const modifiedHTML = await modifyHTML(currentHTML, userRequest.trim());
+    // Gemini API로 HTML 수정 (IP 전달)
+    const modifiedHTML = await modifyHTML(currentHTML, userRequest.trim(), requestIp);
 
     return NextResponse.json({ html: modifiedHTML });
   } catch (error) {
