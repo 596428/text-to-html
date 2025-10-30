@@ -20,6 +20,9 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
   const [fillDirection, setFillDirection] = useState<'row' | 'col' | null>(null);
   const [fillRange, setFillRange] = useState<Set<string>>(new Set());
 
+  // Copy-paste states
+  const [copiedData, setCopiedData] = useState<{row: number, col: number, content: string}[] | null>(null);
+
   // 초기 테이블 구조 생성
   const initializeTable = (rows: number, cols: number): TableStructure => {
     const cells: TableCell[][] = [];
@@ -402,8 +405,207 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
     setFillRange(new Set());
   };
 
+  // Copy-paste functions
+  const handleCopy = async () => {
+    if (selectedCells.size === 0) return;
+
+    const cellsData = Array.from(selectedCells).map(cellId => {
+      const [row, col] = cellId.split('-').map(Number);
+      return {
+        row,
+        col,
+        content: tableStructure.cells[row][col].content || ''
+      };
+    });
+
+    setCopiedData(cellsData);
+
+    // 시스템 클립보드에도 복사 (탭/개행 형식)
+    try {
+      // 셀들을 행/열 순서대로 정렬
+      const minRow = Math.min(...cellsData.map(c => c.row));
+      const maxRow = Math.max(...cellsData.map(c => c.row));
+      const minCol = Math.min(...cellsData.map(c => c.col));
+      const maxCol = Math.max(...cellsData.map(c => c.col));
+
+      // 2D 배열 생성
+      const clipboardText: string[][] = [];
+      for (let r = minRow; r <= maxRow; r++) {
+        const rowData: string[] = [];
+        for (let c = minCol; c <= maxCol; c++) {
+          const cell = cellsData.find(cell => cell.row === r && cell.col === c);
+          rowData.push(cell?.content || '');
+        }
+        clipboardText.push(rowData);
+      }
+
+      // 탭/개행 형식으로 변환
+      const textToCopy = clipboardText.map(row => row.join('\t')).join('\n');
+      await navigator.clipboard.writeText(textToCopy);
+
+      console.log(`[Copy] ${cellsData.length} cells copied to clipboard`);
+    } catch (err) {
+      console.log(`[Copy] ${cellsData.length} cells copied (clipboard write failed, using internal storage)`);
+    }
+  };
+
+  const handlePaste = async () => {
+    // 시작점 찾기 (선택된 셀 중 가장 왼쪽 위)
+    const selectedArray = Array.from(selectedCells);
+    if (selectedArray.length === 0) {
+      alert('붙여넣을 위치를 선택하세요.');
+      return;
+    }
+
+    const startCells = selectedArray.map(id => {
+      const [r, c] = id.split('-').map(Number);
+      return { row: r, col: c };
+    }).sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col);
+
+    const startRow = startCells[0].row;
+    const startCol = startCells[0].col;
+
+    try {
+      // 1. 클립보드에서 텍스트 읽기 (외부 복사 - Excel 등)
+      const clipboardText = await navigator.clipboard.readText();
+
+      if (clipboardText && clipboardText.trim()) {
+        // 탭/개행으로 파싱
+        const rows = clipboardText.split('\n')
+          .filter(row => row.trim())
+          .map(row => row.split('\t'));
+
+        const newCells = tableStructure.cells.map(row => [...row]);
+        let pastedCount = 0;
+
+        rows.forEach((rowData, r) => {
+          rowData.forEach((value, c) => {
+            const targetRow = startRow + r;
+            const targetCol = startCol + c;
+
+            if (targetRow < tableStructure.rows && targetCol < tableStructure.cols) {
+              newCells[targetRow][targetCol] = {
+                ...newCells[targetRow][targetCol],
+                content: value.trim()
+              };
+              pastedCount++;
+            }
+          });
+        });
+
+        if (pastedCount > 0) {
+          onUpdate({
+            tableStructure: {
+              ...tableStructure,
+              cells: newCells
+            }
+          });
+          console.log(`[Paste from clipboard] ${pastedCount} cells pasted`);
+          return;
+        }
+      }
+    } catch (err) {
+      // 클립보드 읽기 실패 시 내부 복사 데이터 사용
+      console.log('[Paste] Using internal copied data');
+    }
+
+    // 2. 내부 복사 데이터 사용
+    if (!copiedData || copiedData.length === 0) {
+      alert('붙여넣을 데이터가 없습니다.');
+      return;
+    }
+
+    // 복사된 셀들의 상대 위치 계산
+    const minRow = Math.min(...copiedData.map(c => c.row));
+    const minCol = Math.min(...copiedData.map(c => c.col));
+
+    const newCells = tableStructure.cells.map(row => [...row]);
+    let pastedCount = 0;
+
+    copiedData.forEach(cell => {
+      const offsetRow = cell.row - minRow;
+      const offsetCol = cell.col - minCol;
+      const targetRow = startRow + offsetRow;
+      const targetCol = startCol + offsetCol;
+
+      if (targetRow < tableStructure.rows && targetCol < tableStructure.cols) {
+        newCells[targetRow][targetCol] = {
+          ...newCells[targetRow][targetCol],
+          content: cell.content
+        };
+        pastedCount++;
+      }
+    });
+
+    if (pastedCount > 0) {
+      onUpdate({
+        tableStructure: {
+          ...tableStructure,
+          cells: newCells
+        }
+      });
+      console.log(`[Paste internal] ${pastedCount} cells pasted`);
+    }
+  };
+
+  const handleDelete = () => {
+    if (selectedCells.size === 0) return;
+
+    const newCells = tableStructure.cells.map((row, r) =>
+      row.map((cell, c) => {
+        const cellId = `${r}-${c}`;
+        if (selectedCells.has(cellId)) {
+          return { ...cell, content: '' };
+        }
+        return cell;
+      })
+    );
+
+    onUpdate({
+      tableStructure: {
+        ...tableStructure,
+        cells: newCells
+      }
+    });
+
+    console.log(`[Delete] ${selectedCells.size} cells cleared`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Delete/Backspace: 선택된 셀들 내용 삭제
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // 텍스트박스 포커스 상태가 아닐 때만 작동
+      if (document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        handleDelete();
+      }
+      return;
+    }
+
+    // Ctrl+C, Ctrl+V
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        handleCopy();
+      } else if (e.key === 'v' || e.key === 'V') {
+        e.preventDefault();
+        handlePaste();
+      }
+    }
+  };
+
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+    <div
+      className="space-y-4 p-4 bg-gray-50 rounded-lg outline-none"
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      onClick={(e) => {
+        // 텍스트박스가 아닌 영역 클릭 시에만 포커스
+        if (!(e.target as HTMLElement).closest('textarea')) {
+          (e.currentTarget as HTMLDivElement).focus();
+        }
+      }}
+    >
       {/* 테이블 크기 설정 */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
@@ -593,7 +795,7 @@ export function TableLayoutEditor({ box, onUpdate }: TableLayoutEditorProps) {
       </div>
 
       <p className="text-xs text-gray-500">
-        💡 팁: 드래그로 영역 선택 | Ctrl+클릭으로 개별 셀 선택/해제 | 선택 후 병합 버튼 클릭 | 우하단 파란 사각형 드래그로 빈칸 채우기 (Excel 스타일)
+        💡 팁: 드래그로 영역 선택 | Ctrl+클릭으로 개별 셀 선택/해제 | 선택 후 병합 버튼 클릭 | 우하단 파란 사각형 드래그로 빈칸 채우기 (Excel 스타일) | Ctrl+C/V로 복사-붙여넣기 (Excel 호환) | Delete로 선택 셀 내용 삭제
       </p>
     </div>
   );
