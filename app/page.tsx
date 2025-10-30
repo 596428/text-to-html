@@ -29,7 +29,7 @@ export default function Home() {
             >
               {showChat ? '💬 챗봇 숨기기' : '💬 챗봇 표시'}
             </button>
-            <div className="text-sm opacity-90">version 2.2.4</div>
+            <div className="text-sm opacity-90">version 2.2.41</div>
           </div>
         </div>
       </header>
