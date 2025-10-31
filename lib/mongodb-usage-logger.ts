@@ -21,14 +21,25 @@ export interface GeminiUsageLog {
  * @param log 사용량 로그 데이터
  */
 export async function logGeminiUsage(log: GeminiUsageLog): Promise<void> {
+  // 개발 서버 IP 필터링 (localhost 접속은 로그 저장 안함)
+  const DEV_IPS = ['::1', '127.0.0.1', 'localhost'];
+  if (DEV_IPS.includes(log.requestIp)) {
+    console.log(`[Usage Log] Skipped (dev IP): ${log.requestIp}`);
+    return; // DB 저장 안함
+  }
+
   console.log('[DEBUG] logGeminiUsage called:', { ip: log.requestIp, isError: log.isError, apiKey: log.apiKeyUsed });
   try {
     const client = await clientPromise;
     const db = client.db('text-to-html');
 
+    // UTC 시간을 한국 시간(KST, UTC+9)으로 변환
+    const utcDate = log.timestamp || new Date();
+    const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+
     await db.collection('usage_logs').insertOne({
       ...log,
-      timestamp: log.timestamp || new Date()
+      timestamp: kstDate
     });
 
     console.log(`[Usage Log] IP: ${log.requestIp}, Error: ${log.isError}, Tokens: ${log.tokenUsage?.totalTokens || 'N/A'}, API Key: ${log.apiKeyUsed || 'N/A'}`);

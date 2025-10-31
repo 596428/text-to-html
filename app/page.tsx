@@ -29,7 +29,7 @@ export default function Home() {
             >
               {showChat ? '💬 챗봇 숨기기' : '💬 챗봇 표시'}
             </button>
-            <div className="text-sm opacity-90">version 2.2.42</div>
+            <div className="text-sm opacity-90">version 2.2.44</div>
           </div>
         </div>
       </header>
@@ -73,6 +73,34 @@ export default function Home() {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* v2.2.44 */}
+              <div className="border-l-4 border-green-600 pl-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.44</h3>
+                <p className="text-sm text-gray-500 mb-4">2025.10.31</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-2">⚡ 성능 개선</h4>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">•</span>
+                        <div>
+                          <strong>API 키 라운드 로빈 방식 적용</strong>
+                          <p className="text-gray-600 mt-1">순차 요청에서도 여러 API 키를 균등하게 분산 사용합니다.</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">•</span>
+                        <div>
+                          <strong>로그 시간대 개선</strong>
+                          <p className="text-gray-600 mt-1">MongoDB 로그가 한국 시간(KST)으로 기록됩니다.</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               {/* v2.2.42 */}
               <div className="border-l-4 border-blue-600 pl-4">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.42 (Beta)</h3>

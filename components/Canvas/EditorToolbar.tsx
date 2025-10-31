@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { ERROR_MESSAGES } from '@/lib/constants';
 import { Box } from '@/types';
 import { generateSectionId } from '@/lib/uuid';
+import ComponentLibrary from './ComponentLibrary';
 
 export default function EditorToolbar() {
   const boxes = useStore((state) => state.boxes);
@@ -19,7 +20,9 @@ export default function EditorToolbar() {
   const setError = useStore((state) => state.setError);
   const htmlVersions = useStore((state) => state.htmlVersions);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadInputRef = useRef<HTMLInputElement>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [showComponentLibrary, setShowComponentLibrary] = useState(false);
 
   const hasGeneratedHTML = htmlVersions.length > 0;
 
@@ -149,7 +152,7 @@ export default function EditorToolbar() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLoadHTML = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -225,9 +228,32 @@ export default function EditorToolbar() {
     }
 
     // 파일 input 초기화
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (loadInputRef.current) {
+      loadInputRef.current.value = '';
     }
+  };
+
+  const handleComponentSelect = (component: any) => {
+    // 새 박스 생성 (기존 레이아웃 타입: 불러오기와 동일한 로직)
+    const newBox: Box = {
+      id: `box-${Date.now()}`,
+      sectionId: generateSectionId(),
+      x: 0,
+      y: boxes.reduce((max, b) => Math.max(max, b.y + b.height), 0),
+      width: Math.max(8, component.width || 12), // 컴포넌트 너비 사용, 최소 8칸
+      height: component.height || 300,
+      content: '',
+      layoutType: 'loaded',
+      loadedComponentId: component.id,
+      loadedHtml: component.html
+    };
+
+    addBox();
+    setTimeout(() => {
+      updateBox(newBox.id, newBox);
+    }, 0);
+
+    setShowComponentLibrary(false);
   };
 
   return (
@@ -278,6 +304,15 @@ export default function EditorToolbar() {
           박스 추가
         </button>
 
+        {/* 불러오기 버튼 (DB 컴포넌트) */}
+        <button
+          onClick={() => setShowComponentLibrary(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium
+                     py-2 px-4 rounded-md shadow-sm transition-all"
+        >
+          📂 불러오기
+        </button>
+
         {boxes.length > 0 && (
           <button
             onClick={clearBoxes}
@@ -288,25 +323,34 @@ export default function EditorToolbar() {
           </button>
         )}
 
+        {/* 레이아웃 복구 버튼 (기존) */}
         <input
           type="file"
           accept=".html"
-          onChange={handleFileUpload}
+          onChange={handleLoadHTML}
           style={{ display: 'none' }}
           ref={fileInputRef}
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium
+          className="bg-purple-600 hover:bg-purple-700 text-white font-medium
                      py-2 px-4 rounded-md shadow-sm transition-all"
         >
-          📂 레이아웃 복구
+          🔄 레이아웃 복구
         </button>
 
         <div className="ml-auto text-xs text-gray-600">
           <strong>Tip:</strong> 박스를 그리고 설명을 작성한 후 "HTML 생성"을 클릭하세요
         </div>
       </div>
+
+      {/* 컴포넌트 라이브러리 팝업 */}
+      {showComponentLibrary && (
+        <ComponentLibrary
+          onSelect={handleComponentSelect}
+          onClose={() => setShowComponentLibrary(false)}
+        />
+      )}
     </div>
   );
 }
