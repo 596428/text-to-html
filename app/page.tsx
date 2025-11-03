@@ -29,7 +29,7 @@ export default function Home() {
             >
               {showChat ? '💬 챗봇 숨기기' : '💬 챗봇 표시'}
             </button>
-            <div className="text-sm opacity-90">version 2.2.42</div>
+            <div className="text-sm opacity-90">version 2.2.461</div>
           </div>
         </div>
       </header>
@@ -73,6 +73,54 @@ export default function Home() {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* v2.2.46 */}
+              <div className="border-l-4 border-green-600 pl-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.46</h3>
+                <p className="text-sm text-gray-500 mb-4">2025.10.31</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-2">🖼️ 이미지 + 텍스트 프롬프트 개선</h4>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">•</span>
+                        <div>
+                          <strong>이미지와 텍스트 역할 명확화</strong>
+                          <p className="text-gray-600 mt-1">이미지 캡처본과 텍스트 설명을 함께 전달할 때, 이미지는 기본 구조 재현, 텍스트는 추가 지시사항으로 명확히 구분하여 처리합니다.</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">•</span>
+                        <div>
+                          <strong>불러오기 버튼 추가</strong>
+                          <p className="text-gray-600 mt-1">툴바에 DB 컴포넌트 불러오기 버튼이 추가되었습니다.</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* v2.2.43 */}
+              <div className="border-l-4 border-blue-600 pl-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.43</h3>
+                <p className="text-sm text-gray-500 mb-4">2025.10.31</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold">•</span>
+                        <div>
+                          <strong>API 키 사용 로직 개선</strong>
+                          <p className="text-gray-600 mt-1">여러 API 키를 효율적으로 분산 사용하도록 수정했습니다.</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               {/* v2.2.42 */}
               <div className="border-l-4 border-blue-600 pl-4">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">version 2.2.42 (Beta)</h3>

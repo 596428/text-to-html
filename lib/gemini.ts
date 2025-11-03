@@ -4,7 +4,7 @@ import { Box } from '@/types';
 import { logHTMLGeneration, logHTMLModification } from '@/lib/logger';
 import { logGeminiUsage } from '@/lib/mongodb-usage-logger';
 
-// ============ API 키 관리 (순환 사용) ============
+// ============ API 키 관리 (최소 연결 방식 - Least Connection) ============
 
 const API_KEYS = [
   process.env.GEMINI_API_KEY_1,
@@ -19,18 +19,60 @@ const API_KEYS = [
   process.env.GEMINI_API_KEY_10
 ].filter(Boolean) as string[]; // undefined 자동 제거
 
-let currentKeyIndex = 0;
+// 각 API 키의 현재 활성 요청 수 추적 (메모리 기반)
+const keyUsageCount = new Map<number, number>();
 
-function getGenAI(): { genAI: GoogleGenerativeAI; keyNumber: string } {
+// Round Robin용 마지막 사용 인덱스
+let lastUsedIndex = 0;
+
+// 초기화: 모든 키를 0으로 설정
+API_KEYS.forEach((_, index) => {
+  keyUsageCount.set(index, 0);
+});
+
+function getGenAI(): { genAI: GoogleGenerativeAI; keyNumber: string; decrementUsage: () => void } {
   if (API_KEYS.length === 0) {
     throw new Error('Gemini API 키가 설정되지 않았습니다. docs/API-KEYS-GUIDE.md를 참조하세요.');
   }
 
-  const key = API_KEYS[currentKeyIndex];
-  const keyNumber = `${currentKeyIndex + 1}`;
-  console.log(`[Gemini] Using API Key #${keyNumber}/${API_KEYS.length}`);
-  currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-  return { genAI: new GoogleGenerativeAI(key), keyNumber };
+  // 가장 적게 사용중인 키들을 찾기 (Least Connection + Round Robin)
+  let minUsage = Infinity;
+  let candidateIndices: number[] = [];
+
+  for (let i = 0; i < API_KEYS.length; i++) {
+    const usage = keyUsageCount.get(i) || 0;
+    if (usage < minUsage) {
+      minUsage = usage;
+      candidateIndices = [i];
+    } else if (usage === minUsage) {
+      candidateIndices.push(i);
+    }
+  }
+
+  // 후보가 여러 개면 Round Robin으로 선택
+  const selectedIndex = candidateIndices[lastUsedIndex % candidateIndices.length];
+  lastUsedIndex++;
+
+  // 선택된 키의 사용 카운트 증가
+  keyUsageCount.set(selectedIndex, minUsage + 1);
+
+  const key = API_KEYS[selectedIndex];
+  const keyNumber = `${selectedIndex + 1}`;
+
+  console.log(`[Gemini] Using API Key #${keyNumber}/${API_KEYS.length} (active: ${minUsage + 1})`);
+
+  // 요청 완료 시 카운트 감소 함수
+  const decrementUsage = () => {
+    const currentCount = keyUsageCount.get(selectedIndex) || 1;
+    keyUsageCount.set(selectedIndex, Math.max(0, currentCount - 1));
+    console.log(`[Gemini] Released API Key #${keyNumber} (active: ${Math.max(0, currentCount - 1)})`);
+  };
+
+  return {
+    genAI: new GoogleGenerativeAI(key),
+    keyNumber,
+    decrementUsage
+  };
 }
 
 // ============ HTML 생성 ============
@@ -47,6 +89,7 @@ export async function generateHTML(boxes: Box[], imageFiles: { [boxId: string]: 
   if (generateBoxes.length > 0) {
     const apiInfo = getGenAI();
     keyNumber = apiInfo.keyNumber;
+    const decrementUsage = apiInfo.decrementUsage;
     const model = apiInfo.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // 팝업 정보 및 Flex 레이아웃 포함
@@ -121,10 +164,20 @@ ${box.children.map((child, j) => `  ${j + 1}. ${child.content || '(설명 없음
     // 이미지가 있는 경우 이미지 분석 지시 추가
     const hasBoxImages = imageFiles[box.id] && imageFiles[box.id].length > 0;
     if (hasBoxImages) {
-      boxDescription += `
-- **요구사항**: 첨부된 이미지를 분석하여 그대로 재현하는 HTML을 생성하세요. 이미지의 레이아웃, 텍스트, 색상, 스타일을 최대한 정확하게 복원하세요. ${box.content}
-- **⚠️ 중요**: 이 영역의 최상위 컨테이너는 **반드시 "col-span-${box.width}"** 클래스를 사용하세요. 다른 값(col-span-6, col-span-12 등)을 사용하지 마세요.`;
+      if (box.content && box.content.trim()) {
+        // 이미지 + 텍스트
+        boxDescription += `
+- **요구사항**:
+  1. **기본 구조**: 첨부된 이미지를 분석하여 그대로 재현하는 HTML을 생성하세요. 이미지의 레이아웃, 텍스트, 색상, 스타일을 최대한 정확하게 복원하세요.
+  2. **추가 지시사항**: ${box.content}
+  3. 이미지의 구조를 유지하면서 위 추가 지시사항을 반영하세요.`;
+      } else {
+        // 이미지만
+        boxDescription += `
+- **요구사항**: 첨부된 이미지를 분석하여 그대로 재현하는 HTML을 생성하세요. 이미지의 레이아웃, 텍스트, 색상, 스타일을 최대한 정확하게 복원하세요.`;
+      }
     } else {
+      // 텍스트만
       boxDescription += `
 - **요구사항**: ${box.content || '(설명 없음)'}`;
     }
@@ -142,7 +195,7 @@ ${box.popupContent || '팝업 기본 내용'}`;
   if (box.scalePercentage && box.scalePercentage !== 100) {
     boxDescription += `
 
-- **🎯 중요: 배율 조정 ${box.scalePercentage}%**
+- ** 중요: 배율 조정 ${box.scalePercentage}%**
   이 영역의 **모든 크기 관련 값**을 ${box.scalePercentage}%로 조정하세요:
   1. **font-size**: 16px → ${Math.round(16 * box.scalePercentage / 100)}px
   2. **padding**: p-2 → p-${Math.max(1, Math.round(2 * box.scalePercentage / 100))}
@@ -283,6 +336,7 @@ ${box.popupContent || '팝업 기본 내용'}`;
 
   // 클라이언트 취소 감지
   if (signal?.aborted) {
+    decrementUsage(); // 카운트 감소
     await logGeminiUsage({
       requestIp,
       timestamp: new Date(),
@@ -348,6 +402,7 @@ ${box.popupContent || '팝업 기본 내용'}`;
 
     // API 호출 후 취소 감지
     if (signal?.aborted) {
+      decrementUsage(); // 카운트 감소
       await logGeminiUsage({
         requestIp,
         timestamp: new Date(),
@@ -416,6 +471,9 @@ ${box.popupContent || '팝업 기본 내용'}`;
     }
 
     throw error;
+  } finally {
+    // ✅ 성공/실패 여부와 관계없이 API 키 카운트 감소
+    decrementUsage();
   }
   } else if (loadedBoxes.length === 0 && generateBoxes.length === 0) {
     throw new Error('박스를 추가해주세요!');
@@ -641,6 +699,7 @@ export async function modifyHTML(
 ): Promise<string> {
   const apiInfo = getGenAI();
   const keyNumber = apiInfo.keyNumber;
+  const decrementUsage = apiInfo.decrementUsage;
   const model = apiInfo.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
@@ -700,6 +759,9 @@ ${currentHTML}
     });
 
     throw error;
+  } finally {
+    // ✅ 성공/실패 여부와 관계없이 API 키 카운트 감소
+    decrementUsage();
   }
 }
 
