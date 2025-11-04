@@ -1,0 +1,28 @@
+{
+  "name": "modern",
+  "description": "Modern, clean design with Tailwind CSS",
+  "framework": "tailwindcss",
+  "cdn": "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css",
+  "styles": {
+    "container": "container mx-auto max-w-screen-2xl",
+    "grid": "grid grid-cols-24 gap-4 auto-rows-min",
+    "section": "bg-white border p-4",
+    "button": "px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600",
+    "input": "p-2 border border-gray-300 rounded",
+    "text": {
+      "h1": "text-4xl font-bold mb-4",
+      "h2": "text-2xl font-semibold mb-3",
+      "h3": "text-xl font-semibold mb-2",
+      "p": "text-base mb-2"
+    },
+    "spacing": {
+      "small": "gap-2",
+      "medium": "gap-4",
+      "large": "gap-8"
+    }
+  },
+  "grid_system": {
+    "columns": 24,
+    "col_span_class": "col-span-{width}"
+  }
+}

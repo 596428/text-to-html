@@ -55,3 +55,20 @@ lib/gemini.ts.backup*
 text-to-html-deploy/
 text-to-html-deploy.zip
 text-to-html-v*.tar
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+python-backend/venv/
+python-backend/.env
+python-backend/logs/
+
+# Test scripts
+test-*.js
+*.backup*
+
+# Korean text files
+*.txt
